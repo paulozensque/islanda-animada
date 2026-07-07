@@ -112,15 +112,6 @@ body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--
         <div class="progress-bar-wrapper"><div class="progress-bar" id="progressBar"></div></div>
     </div>
 
-    <div class="api-config hidden" id="apiConfig">
-        <p class="api-label">Para animar com IA, crie uma conta gratis em <a href="https://fal.ai" target="_blank" style="color:var(--accent)">fal.ai</a> e cole sua chave:</p>
-        <div style="display:flex;gap:8px;margin-top:8px">
-            <input type="text" id="falKeyInput" placeholder="Cole sua FAL_KEY aqui..." style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(139,92,246,.3);background:var(--bg);color:var(--text);font-size:.85rem">
-            <button id="falKeySave" style="padding:10px 16px;border-radius:8px;background:var(--primary);color:#fff;border:none;cursor:pointer;font-weight:600">Salvar</button>
-        </div>
-        <p style="font-size:.75rem;color:var(--text-muted);margin-top:6px">$10 de credito gratis = ~250 videos!</p>
-    </div>
-
     <div class="effects-panel hidden" id="effectsPanel">
         <h3>Escolha um Efeito</h3>
         <div class="effects-grid">
@@ -160,30 +151,9 @@ body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--
 (function(){
 'use strict';
 // fal.ai API - modelo Stable Video Diffusion Turbo (image to video)
-let FAL_KEY=localStorage.getItem('fal_key')||'';
+const FAL_KEY='590b2c32-395d-47c1-a557-563e16175dae:b1069758d433feefcebe093c4b38adb9';
 const FAL_MODEL='fal-ai/fast-svd-lcm';
 const FAL_QUEUE_URL='https://queue.fal.run/'+FAL_MODEL;
-// Stability AI fallback
-const STABILITY_KEY='sk-qUAe4fe572yDOKXx4Ir0SHdoZUrnhF0ebaEBUmJzNXCFDXK0';
-const STABILITY_URL='https://api.stability.ai/v2beta/image-to-video';
-
-const falKeyInput=document.getElementById('falKeyInput');
-const falKeySave=document.getElementById('falKeySave');
-const apiConfig=document.getElementById('apiConfig');
-
-// Mostrar campo de config se nao tiver key
-if(!FAL_KEY){apiConfig.classList.remove('hidden');}
-if(FAL_KEY){falKeyInput.value=FAL_KEY;}
-
-falKeySave.addEventListener('click',function(){
-    var key=falKeyInput.value.trim();
-    if(key){
-        FAL_KEY=key;
-        localStorage.setItem('fal_key',key);
-        apiConfig.classList.add('hidden');
-        showToast('Chave salva! Agora voce pode usar o Dar Vida.');
-    }
-});
 
 const uploadZone=document.getElementById('uploadZone');
 const imagePreview=document.getElementById('imagePreview');
@@ -292,45 +262,20 @@ function imageToDataURI(img){
     return c.toDataURL('image/png');
 }
 
-// Resize para Stability AI (768x768)
-function resizeFor768(img){
-    var c=document.createElement('canvas');
-    c.width=768;c.height=768;
-    var ctx=c.getContext('2d');
-    var scale=Math.max(768/img.width,768/img.height);
-    var w=img.width*scale,h=img.height*scale;
-    ctx.drawImage(img,(768-w)/2,(768-h)/2,w,h);
-    return new Promise(function(res){c.toBlob(function(b){res(b);},'image/png');});
-}
 
-// Animate - tenta fal.ai primeiro, depois Stability AI
+
+// Animate - usa fal.ai diretamente
 btnAnimate.addEventListener('click',async function(){
     if(!uploadedImage){showToast('Envie uma imagem primeiro!',true);return;}
     progressContainer.classList.remove('hidden');
     progressBar.style.width='10%';
     progressText.textContent='Preparando imagem...';
 
-    // Tenta fal.ai se tiver key configurada
-    if(FAL_KEY){
-        try{
-            await animateWithFal();
-            return;
-        }catch(e){
-            console.log('fal.ai falhou, tentando Stability...',e);
-        }
-    }
-
-    // Fallback: Stability AI
     try{
-        await animateWithStability();
+        await animateWithFal();
     }catch(err){
         progressContainer.classList.add('hidden');
-        if(!FAL_KEY){
-            apiConfig.classList.remove('hidden');
-            showToast('Configure sua chave fal.ai para dar vida as suas obras!',true);
-        }else{
-            showToast('Erro ao gerar: '+err.message+'. Tente novamente!',true);
-        }
+        showToast('Erro: '+err.message,true);
     }
 });
 
@@ -387,55 +332,7 @@ async function animateWithFal(){
     }
 }
 
-async function animateWithStability(){
-    var blob=await resizeFor768(uploadedImage);
-    progressBar.style.width='20%';
-    progressText.textContent='Enviando para a IA...';
 
-    var fd=new FormData();
-    fd.append('image',blob,'image.png');
-    fd.append('seed','0');
-    fd.append('cfg_scale','1.8');
-    fd.append('motion_bucket_id','127');
-
-    var resp=await fetch(STABILITY_URL,{method:'POST',headers:{'Authorization':'Bearer '+STABILITY_KEY},body:fd});
-    if(!resp.ok){
-        var errData=await resp.json().catch(function(){return{};});
-        if(resp.status===404){
-            throw new Error('API indisponivel');
-        }
-        throw new Error(errData.message||'Erro '+resp.status);
-    }
-    var data=await resp.json();
-    var genId=data.id;
-    progressBar.style.width='40%';
-    progressText.textContent='Gerando animacao...';
-
-    // Poll
-    var progress=40;
-    while(true){
-        await new Promise(function(r){setTimeout(r,3000);});
-        var pollResp=await fetch(STABILITY_URL+'/result/'+genId,{
-            headers:{'Authorization':'Bearer '+STABILITY_KEY,'Accept':'video/*'}
-        });
-        if(pollResp.status===202){
-            progress=Math.min(progress+5,90);
-            progressBar.style.width=progress+'%';
-            continue;
-        }
-        if(pollResp.ok){
-            var videoBlob=await pollResp.blob();
-            progressBar.style.width='100%';
-            progressText.textContent='Concluido!';
-            saveToGallery(videoBlob);
-            incrementCounter();
-            showToast('Animacao criada com sucesso! 🎉');
-            setTimeout(function(){progressContainer.classList.add('hidden');},1500);
-            return;
-        }
-        throw new Error('Erro: '+pollResp.status);
-    }
-}
 
 // Gallery
 function saveToGallery(blob){
