@@ -92,17 +92,11 @@ body {
 .btn-new:hover { background: rgba(245,158,11,0.2); border-color: var(--accent); color: var(--accent); }
 .btn-main:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
 
-/* API Key Section */
-.api-section { background: rgba(139,92,246,0.1); border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px solid rgba(139,92,246,0.2); }
-.api-section label { display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px; }
-.api-section a { color: var(--accent); text-decoration: underline; }
-.api-input-row { display: flex; gap: 8px; }
-.api-input { flex: 1; padding: 10px 14px; background: var(--bg-dark); border: 1px solid rgba(139,92,246,0.3); border-radius: 8px; color: var(--text-primary); font-size: 0.9rem; }
-.api-input:focus { outline: none; border-color: var(--primary); }
-.api-save { padding: 10px 16px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.85rem; }
-.api-status { font-size: 0.8rem; margin-top: 6px; }
-.api-status.ok { color: var(--success); }
-.api-status.missing { color: var(--accent); }
+/* Usage Counter */
+.usage-section { background: rgba(139,92,246,0.08); border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; border: 1px solid rgba(139,92,246,0.15); display: flex; align-items: center; justify-content: center; gap: 12px; }
+.usage-icon { font-size: 1.3rem; }
+.usage-text { font-size: 0.9rem; color: var(--text-secondary); }
+.usage-count { font-weight: 700; color: var(--accent); font-size: 1.1rem; }
 
 /* Progress */
 .progress-container { margin-top: 16px; text-align: center; }
@@ -190,17 +184,13 @@ body {
     </div>
 
     <div class="controls hidden" id="controls">
-      <div class="api-section" id="apiSection">
-        <label>🔑 Chave da API Stability AI (<a href="https://platform.stability.ai/account/keys" target="_blank">criar gratis aqui</a> - 25 creditos gratis!)</label>
-        <div class="api-input-row">
-          <input type="password" class="api-input" id="apiKeyInput" placeholder="sk-...">
-          <button class="api-save" id="apiSaveBtn">Salvar</button>
-        </div>
-        <div class="api-status missing" id="apiStatus">⚠️ Necessaria para o botao "Dar Vida"</div>
+      <div class="usage-section">
+        <span class="usage-icon">✨</span>
+        <span class="usage-text">Animacoes criadas: <span class="usage-count" id="usageCount">0</span></span>
       </div>
 
       <div class="controls-actions">
-        <button class="btn-main btn-vida" id="btnVida" disabled>
+        <button class="btn-main btn-vida" id="btnVida">
           <span>🌟</span> Dar Vida
         </button>
         <button class="btn-main btn-parallax" id="btnParallax">
@@ -241,11 +231,12 @@ body {
   'use strict';
 
   // ===== STATE =====
+  var API_KEY = 'sk-qUAe4fe572yDOKXx4Ir0SHdoZUrnhF0ebaEBUmJzNXCFDXK0';
   var state = {
     currentImage: null,
     currentImageData: null,
     currentFile: null,
-    apiKey: localStorage.getItem('stability-api-key') || '',
+    usageCount: parseInt(localStorage.getItem('islanda-usage-count') || '0'),
     gallery: [],
     galleryOpen: true,
     isProcessing: false,
@@ -279,16 +270,9 @@ body {
     el.galleryGrid = document.getElementById('galleryGrid');
     el.galleryEmpty = document.getElementById('galleryEmpty');
     el.galleryCount = document.getElementById('galleryCount');
-    el.apiKeyInput = document.getElementById('apiKeyInput');
-    el.apiSaveBtn = document.getElementById('apiSaveBtn');
-    el.apiStatus = document.getElementById('apiStatus');
-
-    if (state.apiKey) {
-      el.apiKeyInput.value = state.apiKey;
-      el.apiStatus.textContent = '✅ Chave salva! Pronta para usar.';
-      el.apiStatus.className = 'api-status ok';
-      el.btnVida.disabled = false;
-    }
+    el.usageCount = document.getElementById('usageCount');
+    el.usageCount.textContent = state.usageCount;
+    el.btnVida.disabled = false;
 
     loadGallery();
     setupEvents();
@@ -320,16 +304,7 @@ body {
       el.gallerySection.classList.toggle('collapsed', !state.galleryOpen);
     });
 
-    el.apiSaveBtn.addEventListener('click', function() {
-      var key = el.apiKeyInput.value.trim();
-      if (key) {
-        state.apiKey = key;
-        localStorage.setItem('stability-api-key', key);
-        el.apiStatus.textContent = '✅ Chave salva! Pronta para usar.';
-        el.apiStatus.className = 'api-status ok';
-        el.btnVida.disabled = false;
-      }
-    });
+
   }
 
   // ===== FILE HANDLING =====
@@ -375,8 +350,14 @@ body {
   }
 
   // ===== DAR VIDA (Stability AI) =====
+  function incrementUsage() {
+    state.usageCount++;
+    localStorage.setItem('islanda-usage-count', state.usageCount.toString());
+    el.usageCount.textContent = state.usageCount;
+  }
+
   function darVida() {
-    if (state.isProcessing || !state.apiKey) return;
+    if (state.isProcessing) return;
     state.isProcessing = true;
     stopParallax();
     stopAudio();
@@ -398,7 +379,7 @@ body {
       // Step 1: Start generation
       fetch('https://api.stability.ai/v2beta/image-to-video', {
         method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + state.apiKey },
+        headers: { 'Authorization': 'Bearer ' + API_KEY },
         body: formData
       })
       .then(function(res) {
@@ -431,7 +412,7 @@ body {
     fetch('https://api.stability.ai/v2beta/image-to-video/result/' + generationId, {
       method: 'GET',
       headers: {
-        'Authorization': 'Bearer ' + state.apiKey,
+        'Authorization': 'Bearer ' + API_KEY,
         'Accept': 'video/*'
       }
     })
@@ -447,6 +428,7 @@ body {
     .then(function(blob) {
       if (!blob) return;
       updateProgress(100, '🎉 Sua obra ganhou vida!');
+      incrementUsage();
       var videoUrl = URL.createObjectURL(blob);
       showVideo(videoUrl);
       addToGallery(videoUrl, blob, 'vida');
@@ -754,7 +736,7 @@ body {
   function updateProgress(pct, txt) { el.progressFill.style.width = pct + '%'; el.progressText.textContent = txt; }
   function resetProcessing() {
     state.isProcessing = false;
-    el.btnVida.disabled = !state.apiKey;
+    el.btnVida.disabled = false;
     el.btnParallax.disabled = false;
     el.progressContainer.classList.add('hidden');
   }
