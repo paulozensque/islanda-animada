@@ -1,749 +1,505 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Islanda Animada - Dando vida as suas obras</title>
-  <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-:root {
-  --primary: #8B5CF6; --primary-dark: #6D28D9; --primary-light: #C4B5FD;
-  --accent: #F59E0B; --accent-light: #FDE68A;
-  --bg-dark: #1F1B2E; --bg-medium: #2D2640; --bg-light: #3D3556;
-  --text-primary: #F5F3FF; --text-secondary: #C4B5FD; --text-muted: #8B7FB5;
-  --canvas-bg: #FAF7F0; --frame-wood: #8B6914; --frame-wood-dark: #5C4610;
-  --frame-gold: #D4A945; --success: #10B981; --error: #EF4444;
-}
-body {
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  background: var(--bg-dark); color: var(--text-primary);
-  min-height: 100vh; overflow-x: hidden;
-  background-image:
-    radial-gradient(ellipse at 20% 50%, rgba(139,92,246,0.08) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 20%, rgba(245,158,11,0.05) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 80%, rgba(139,92,246,0.05) 0%, transparent 50%);
-}
-.app-container { max-width: 1100px; margin: 0 auto; padding: 20px; min-height: 100vh; display: flex; flex-direction: column; }
-.app-header { text-align: center; padding: 30px 20px 20px; }
-.app-title {
-  font-size: 2.8rem; font-weight: 700;
-  background: linear-gradient(135deg, var(--primary-light), var(--accent), var(--primary-light));
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-  margin-bottom: 8px; letter-spacing: -0.5px;
-}
-.title-icon { -webkit-text-fill-color: initial; font-size: 2rem; }
-.app-subtitle { color: var(--text-secondary); font-size: 1.1rem; font-style: italic; opacity: 0.9; }
-.canvas-area { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 20px 0; }
-.easel { position: relative; width: 100%; max-width: 750px; }
-.easel-top { width: 60px; height: 15px; background: linear-gradient(180deg, #A0722A, #6B4E1D); margin: 0 auto; border-radius: 4px 4px 0 0; }
-.canvas-frame {
-  background: linear-gradient(145deg, var(--frame-gold), var(--frame-wood), var(--frame-wood-dark));
-  padding: 16px; border-radius: 4px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1), 0 0 0 2px var(--frame-wood-dark), 0 0 0 4px var(--frame-gold);
-  position: relative;
-}
-.canvas-inner { background: var(--canvas-bg); min-height: 450px; border-radius: 2px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-.upload-zone {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 60px 40px; text-align: center; width: 100%; height: 100%; min-height: 450px;
-  border: 3px dashed #C4A882; margin: 10px; border-radius: 8px; transition: all 0.3s ease; cursor: pointer;
-}
-.upload-zone:hover, .upload-zone.drag-over { border-color: var(--primary); background: rgba(139,92,246,0.05); }
-.upload-icon { color: #A08060; margin-bottom: 20px; opacity: 0.7; animation: float 3s ease-in-out infinite; }
-@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-.upload-title { font-size: 1.5rem; color: #5C4610; margin-bottom: 10px; font-weight: 600; }
-.upload-text { color: #8B7355; font-size: 0.95rem; margin-bottom: 24px; line-height: 1.5; }
-.upload-btn {
-  background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; border: none;
-  padding: 14px 32px; border-radius: 30px; font-size: 1.05rem; font-weight: 600; cursor: pointer;
-  transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(139,92,246,0.4);
-}
-.upload-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(139,92,246,0.5); }
-.preview-area { width: 100%; height: 100%; min-height: 450px; position: relative; display: flex; align-items: center; justify-content: center; }
-.preview-area img { max-width: 100%; max-height: 450px; object-fit: contain; display: block; }
-.preview-area canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-.preview-area video { max-width: 100%; max-height: 450px; object-fit: contain; display: block; border-radius: 4px; }
-.easel-legs { width: 100%; height: 25px; position: relative; }
-.easel-legs::before, .easel-legs::after { content: ''; position: absolute; bottom: 0; width: 8px; height: 25px; background: linear-gradient(180deg, #6B4E1D, #4A3512); border-radius: 0 0 3px 3px; }
-.easel-legs::before { left: 30%; transform: rotate(-3deg); }
-.easel-legs::after { right: 30%; transform: rotate(3deg); }
-
-/* Controls */
-.controls { width: 100%; max-width: 750px; margin-top: 24px; background: var(--bg-medium); border-radius: 16px; padding: 24px; border: 1px solid rgba(139,92,246,0.2); animation: fadeIn 0.4s ease; }
-.controls-actions { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px; }
-.btn-main {
-  padding: 16px 36px; border: none; border-radius: 30px; font-size: 1.1rem; font-weight: 700;
-  cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; gap: 10px;
-  position: relative; overflow: hidden;
-}
-.btn-vida {
-  background: linear-gradient(135deg, #EC4899, #8B5CF6); color: white;
-  box-shadow: 0 4px 20px rgba(236,72,153,0.4);
-}
-.btn-vida:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 8px 30px rgba(236,72,153,0.5); }
-.btn-vida::after { content: ''; position: absolute; inset: 0; background: linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.15) 50%, transparent 60%); animation: shimmer 3s infinite; }
-@keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
-.btn-parallax {
-  background: linear-gradient(135deg, #06B6D4, #8B5CF6); color: white;
-  box-shadow: 0 4px 20px rgba(6,182,212,0.4);
-}
-.btn-parallax:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 8px 30px rgba(6,182,212,0.5); }
-.btn-new { padding: 10px 20px; background: var(--bg-light); color: var(--text-secondary); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all 0.3s ease; }
-.btn-new:hover { background: rgba(245,158,11,0.2); border-color: var(--accent); color: var(--accent); }
-.btn-main:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
-
-/* Usage Counter */
-.usage-section { background: rgba(139,92,246,0.08); border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; border: 1px solid rgba(139,92,246,0.15); display: flex; align-items: center; justify-content: center; gap: 12px; }
-.usage-icon { font-size: 1.3rem; }
-.usage-text { font-size: 0.9rem; color: var(--text-secondary); }
-.usage-count { font-weight: 700; color: var(--accent); font-size: 1.1rem; }
-
-/* Progress */
-.progress-container { margin-top: 16px; text-align: center; }
-.progress-bar { width: 100%; height: 8px; background: var(--bg-light); border-radius: 4px; overflow: hidden; margin-bottom: 10px; }
-.progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #EC4899, var(--primary)); border-radius: 4px; transition: width 0.3s ease; }
-.progress-text { color: var(--text-muted); font-size: 0.9rem; }
-
-/* Gallery */
-.gallery-section { margin-top: 30px; border-radius: 16px 16px 0 0; overflow: hidden; }
-.gallery-tab { background: var(--bg-medium); border-radius: 16px 16px 0 0; border: 1px solid rgba(139,92,246,0.2); border-bottom: none; }
-.gallery-tab-handle { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 14px 20px; cursor: pointer; user-select: none; }
-.gallery-tab-handle:hover { background: rgba(139,92,246,0.1); }
-.tab-icon { font-size: 1.3rem; } .tab-text { font-size: 1.1rem; font-weight: 600; }
-.tab-count { background: var(--primary); color: white; font-size: 0.75rem; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
-.tab-arrow { color: var(--text-muted); font-size: 0.8rem; transition: transform 0.3s ease; }
-.gallery-section.collapsed .tab-arrow { transform: rotate(180deg); }
-.gallery-content { background: var(--bg-medium); border: 1px solid rgba(139,92,246,0.2); border-top: 1px solid rgba(139,92,246,0.1); padding: 20px; min-height: 120px; max-height: 400px; overflow-y: auto; transition: all 0.4s ease; }
-.gallery-section.collapsed .gallery-content { max-height: 0; min-height: 0; padding: 0 20px; overflow: hidden; }
-.gallery-empty { text-align: center; padding: 20px; color: var(--text-muted); }
-.gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
-.gallery-item { background: var(--bg-light); border-radius: 12px; overflow: hidden; border: 1px solid rgba(139,92,246,0.15); transition: all 0.3s ease; cursor: pointer; }
-.gallery-item:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(139,92,246,0.2); border-color: var(--primary-light); }
-.gallery-item-thumb { width: 100%; height: 140px; object-fit: cover; display: block; position: relative; }
-.gallery-item-play { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 40px; height: 40px; background: rgba(139,92,246,0.9); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1rem; opacity: 0; transition: opacity 0.3s; }
-.gallery-item:hover .gallery-item-play { opacity: 1; }
-.gallery-item-info { padding: 10px; }
-.gallery-item-name { font-size: 0.85rem; color: var(--text-primary); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.gallery-item-meta { font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; display: flex; justify-content: space-between; }
-.gallery-item-badge { background: rgba(236,72,153,0.2); color: #F472B6; padding: 2px 6px; border-radius: 6px; font-size: 0.65rem; font-weight: 600; }
-.gallery-item-badge.parallax { background: rgba(6,182,212,0.2); color: #67E8F9; }
-
-/* Modal */
-.video-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
-.video-modal.active { opacity: 1; pointer-events: all; }
-.video-modal-content { background: var(--bg-medium); border-radius: 16px; padding: 20px; max-width: 90vw; max-height: 90vh; position: relative; }
-.video-modal-content video { max-width: 100%; max-height: 70vh; border-radius: 8px; display: block; }
-.modal-close { position: absolute; top: -12px; right: -12px; width: 36px; height: 36px; background: var(--error); color: white; border: none; border-radius: 50%; font-size: 1.2rem; cursor: pointer; }
-.modal-download { display: block; margin: 12px auto 0; padding: 10px 24px; background: linear-gradient(135deg, var(--success), #059669); color: white; border: none; border-radius: 20px; font-size: 0.9rem; font-weight: 600; cursor: pointer; }
-
-.app-footer { text-align: center; padding: 20px; color: var(--text-muted); font-size: 0.9rem; }
-.hidden { display: none !important; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-@media (max-width: 768px) {
-  .app-title { font-size: 2rem; } .canvas-inner, .preview-area, .upload-zone { min-height: 300px; }
-  .preview-area img, .preview-area video { max-height: 300px; }
-  .btn-main { padding: 14px 24px; font-size: 1rem; }
-  .controls-actions { flex-direction: column; align-items: stretch; }
-  .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
-}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Islanda Animada</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Georgia',serif;background:linear-gradient(135deg,#1a0a2e 0%,#2d1b4e 50%,#1a0a2e 100%);min-height:100vh;color:#e8d5f5;overflow-x:hidden}
+header{text-align:center;padding:30px 20px 10px}
+header h1{font-size:2.5em;background:linear-gradient(45deg,#f5a6e6,#a855f7,#f5a6e6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:2px}
+header p{font-style:italic;color:#c4a6d9;margin-top:5px;font-size:1.1em}
+.counter{text-align:center;margin:5px 0;font-size:0.9em;color:#a78bba}
+.easel{display:flex;justify-content:center;padding:20px;perspective:1000px}
+.canvas-frame{position:relative;width:520px;height:520px;background:#2a1a3a;border:12px solid #4a2c6a;border-radius:8px;box-shadow:0 0 40px rgba(168,85,247,0.3),inset 0 0 30px rgba(0,0,0,0.5);overflow:hidden}
+.canvas-frame::before{content:'';position:absolute;top:-20px;left:50%;transform:translateX(-50%);width:60px;height:20px;background:#4a2c6a;border-radius:4px 4px 0 0;z-index:2}
+.upload-zone{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:3px dashed #7c3aed;border-radius:4px;transition:all 0.3s}
+.upload-zone:hover{border-color:#a855f7;background:rgba(168,85,247,0.1)}
+.upload-zone.dragover{border-color:#f5a6e6;background:rgba(245,166,230,0.1)}
+.upload-zone .icon{font-size:4em;margin-bottom:10px}
+.upload-zone p{font-size:1.1em;color:#c4a6d9}
+.upload-zone small{color:#8b6aad;margin-top:8px}
+#previewContainer{display:none;width:100%;height:100%;position:relative}
+#previewImg{width:100%;height:100%;object-fit:contain;display:block}
+#effectCanvas{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
+#videoPreview{width:100%;height:100%;object-fit:contain;display:none;position:absolute;top:0;left:0}
+.controls{text-align:center;padding:20px}
+.btn-group{display:flex;gap:15px;justify-content:center;flex-wrap:wrap}
+.btn{padding:14px 28px;border:none;border-radius:30px;font-size:1.1em;font-family:inherit;cursor:pointer;transition:all 0.3s;font-weight:bold}
+.btn-vida{background:linear-gradient(45deg,#7c3aed,#a855f7);color:#fff;box-shadow:0 4px 15px rgba(168,85,247,0.4)}
+.btn-vida:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(168,85,247,0.6)}
+.btn-vida:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+.btn-efeitos{background:linear-gradient(45deg,#6d28d9,#9333ea);color:#fff;box-shadow:0 4px 15px rgba(147,51,234,0.4)}
+.btn-efeitos:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(147,51,234,0.6)}
+.effects-panel{display:none;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:15px;padding:10px;animation:fadeIn 0.3s}
+.effects-panel.visible{display:flex}
+.btn-effect{padding:10px 20px;border:2px solid #7c3aed;border-radius:20px;background:transparent;color:#e8d5f5;font-family:inherit;cursor:pointer;transition:all 0.3s}
+.btn-effect:hover,.btn-effect.active{background:#7c3aed;color:#fff;transform:scale(1.05)}
+.status{text-align:center;padding:10px;color:#c4a6d9;font-style:italic;min-height:30px}
+.gallery{padding:20px 40px}
+.gallery h2{text-align:center;margin-bottom:15px;color:#c4a6d9;font-size:1.3em}
+.gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:15px}
+.gallery-item{position:relative;border-radius:8px;overflow:hidden;border:3px solid #4a2c6a;aspect-ratio:1;background:#1a0a2e}
+.gallery-item img,.gallery-item video{width:100%;height:100%;object-fit:cover}
+.gallery-item .delete-btn{position:absolute;top:5px;right:5px;width:28px;height:28px;border-radius:50%;background:rgba(220,38,38,0.8);color:#fff;border:none;cursor:pointer;font-size:1em;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.3s}
+.gallery-item:hover .delete-btn{opacity:1}
+footer{text-align:center;padding:30px;color:#8b6aad;font-size:1em}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+.loading-spinner{display:inline-block;width:20px;height:20px;border:3px solid rgba(255,255,255,0.3);border-radius:50%;border-top-color:#fff;animation:spin 1s linear infinite;margin-right:8px;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+#fileInput{display:none}
+</style>
 </head>
 <body>
-<div class="app-container">
-  <header class="app-header">
-    <h1 class="app-title"><span class="title-icon">🎨</span> Islanda Animada <span class="title-icon">✨</span></h1>
-    <p class="app-subtitle">Dando vida as suas obras de arte</p>
-  </header>
-
-  <main class="canvas-area">
-    <div class="easel">
-      <div class="easel-top"></div>
-      <div class="canvas-frame">
-        <div class="canvas-inner" id="canvasInner">
-          <div class="upload-zone" id="uploadZone">
-            <div class="upload-icon">
-              <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-              </svg>
-            </div>
-            <h2 class="upload-title">Traga sua arte para a vida!</h2>
-            <p class="upload-text">Arraste uma pintura ou desenho aqui<br>ou clique para selecionar</p>
-            <input type="file" id="fileInput" accept="image/*" hidden>
-            <button class="upload-btn" id="uploadBtn">🖌️ Escolher Imagem</button>
-          </div>
-          <div class="preview-area hidden" id="previewArea">
-            <img id="previewImage" alt="Sua obra de arte">
-            <canvas id="parallaxCanvas"></canvas>
-            <video id="resultVideo" loop hidden></video>
-          </div>
-        </div>
-      </div>
-      <div class="easel-legs"></div>
-    </div>
-
-    <div class="controls hidden" id="controls">
-      <div class="usage-section">
-        <span class="usage-icon">✨</span>
-        <span class="usage-text">Animacoes criadas: <span class="usage-count" id="usageCount">0</span></span>
-      </div>
-
-      <div class="controls-actions">
-        <button class="btn-main btn-vida" id="btnVida">
-          <span>🌟</span> Dar Vida
-        </button>
-        <button class="btn-main btn-parallax" id="btnParallax">
-          <span>🎭</span> Parallax
-        </button>
-      </div>
-      <button class="btn-new" id="newImageBtn">🖼️ Nova Imagem</button>
-
-      <div class="progress-container hidden" id="progressContainer">
-        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-        <p class="progress-text" id="progressText">Processando...</p>
-      </div>
-    </div>
-  </main>
-
-  <section class="gallery-section" id="gallerySection">
-    <div class="gallery-tab">
-      <div class="gallery-tab-handle" id="galleryHandle">
-        <span class="tab-icon">🎬</span><span class="tab-text">Galeria</span>
-        <span class="tab-count" id="galleryCount">0</span>
-        <span class="tab-arrow">▲</span>
-      </div>
-    </div>
-    <div class="gallery-content" id="galleryContent">
-      <div class="gallery-empty" id="galleryEmpty">
-        <p>🎨 Sua galeria esta vazia</p>
-        <p style="font-size:0.85rem;opacity:0.7;margin-top:6px;">Anime suas obras e elas aparecerao aqui!</p>
-      </div>
-      <div class="gallery-grid" id="galleryGrid"></div>
-    </div>
-  </section>
-
-  <footer class="app-footer"><p>Feito com 💜 para Islanda</p></footer>
+<header>
+<h1>Islanda Animada</h1>
+<p>Dando vida as suas pinturas</p>
+</header>
+<div class="counter" id="counter"></div>
+<div class="easel">
+<div class="canvas-frame" id="canvasFrame">
+<div class="upload-zone" id="uploadZone">
+<div class="icon">🎨</div>
+<p>Arraste sua pintura aqui</p>
+<small>ou clique para selecionar</small>
 </div>
-
+<div id="previewContainer">
+<img id="previewImg" alt="Preview">
+<canvas id="effectCanvas"></canvas>
+<video id="videoPreview" loop muted></video>
+</div>
+<input type="file" id="fileInput" accept="image/*">
+</div>
+</div>
+<div class="controls">
+<div class="btn-group">
+<button class="btn btn-vida" id="btnVida" disabled>🌟 Dar Vida</button>
+<button class="btn btn-efeitos" id="btnEfeitos" disabled>🎭 Efeitos</button>
+</div>
+<div class="effects-panel" id="effectsPanel">
+<button class="btn-effect" data-effect="parallax">🔮 Parallax 2.5D</button>
+<button class="btn-effect" data-effect="ondas">🌊 Ondas</button>
+<button class="btn-effect" data-effect="flutuante">🎈 Flutuante</button>
+<button class="btn-effect" data-effect="cinematic">🎬 Cinematic</button>
+</div>
+</div>
+<div class="status" id="status"></div>
+<div class="gallery">
+<h2>Galeria</h2>
+<div class="gallery-grid" id="galleryGrid"></div>
+</div>
+<footer>Feito com 💜 para Islanda</footer>
 <script>
-(function() {
-  'use strict';
+(function(){
+'use strict';
+document.addEventListener('DOMContentLoaded', function(){
 
-  // ===== STATE =====
-  var API_KEY = 'sk-qUAe4fe572yDOKXx4Ir0SHdoZUrnhF0ebaEBUmJzNXCFDXK0';
-  var state = {
-    currentImage: null,
-    currentImageData: null,
-    currentFile: null,
-    usageCount: parseInt(localStorage.getItem('islanda-usage-count') || '0'),
-    gallery: [],
-    galleryOpen: true,
-    isProcessing: false,
-    parallaxActive: false,
-    parallaxFrame: null,
-    audioCtx: null,
-    audioNodes: []
+const API_KEY = 'sk-qUAe4fe572yDOKXx4Ir0SHdoZUrnhF0ebaEBUmJzNXCFDXK0';
+const API_URL = 'https://api.stability.ai/v2beta/image-to-video';
+
+const uploadZone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+const previewContainer = document.getElementById('previewContainer');
+const previewImg = document.getElementById('previewImg');
+const effectCanvas = document.getElementById('effectCanvas');
+const videoPreview = document.getElementById('videoPreview');
+const btnVida = document.getElementById('btnVida');
+const btnEfeitos = document.getElementById('btnEfeitos');
+const effectsPanel = document.getElementById('effectsPanel');
+const statusEl = document.getElementById('status');
+const galleryGrid = document.getElementById('galleryGrid');
+const counterEl = document.getElementById('counter');
+const canvasFrame = document.getElementById('canvasFrame');
+
+let currentFile = null;
+let currentEffect = null;
+let animFrameId = null;
+let audioCtx = null;
+let particles = [];
+let usageCount = parseInt(localStorage.getItem('islanda_usage') || '0');
+let gallery = JSON.parse(localStorage.getItem('islanda_gallery') || '[]');
+
+function updateCounter(){
+  counterEl.textContent = '🌟 Dar Vida usado: ' + usageCount + ' vez' + (usageCount !== 1 ? 'es' : '');
+}
+updateCounter();
+
+function setStatus(msg){statusEl.innerHTML = msg;}
+
+// --- Upload ---
+uploadZone.addEventListener('click', function(e){
+  e.stopPropagation();
+  fileInput.click();
+});
+
+fileInput.addEventListener('click', function(e){
+  e.stopPropagation();
+});
+
+fileInput.addEventListener('change', function(e){
+  e.stopPropagation();
+  if(fileInput.files && fileInput.files[0]){
+    handleFile(fileInput.files[0]);
+  }
+});
+
+uploadZone.addEventListener('dragover', function(e){
+  e.preventDefault();
+  e.stopPropagation();
+  uploadZone.classList.add('dragover');
+});
+
+uploadZone.addEventListener('dragleave', function(e){
+  e.preventDefault();
+  e.stopPropagation();
+  uploadZone.classList.remove('dragover');
+});
+
+uploadZone.addEventListener('drop', function(e){
+  e.preventDefault();
+  e.stopPropagation();
+  uploadZone.classList.remove('dragover');
+  if(e.dataTransfer.files && e.dataTransfer.files[0]){
+    handleFile(e.dataTransfer.files[0]);
+  }
+});
+
+function handleFile(file){
+  if(!file.type.startsWith('image/')) return;
+  currentFile = file;
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    previewImg.src = ev.target.result;
+    uploadZone.style.display = 'none';
+    previewContainer.style.display = 'block';
+    videoPreview.style.display = 'none';
+    btnVida.disabled = false;
+    btnEfeitos.disabled = false;
+    stopEffect();
+    setStatus('Imagem carregada! Escolha uma opcao.');
   };
+  reader.readAsDataURL(file);
+}
 
-  var el = {};
-
-  // ===== INIT =====
-  function init() {
-    el.uploadZone = document.getElementById('uploadZone');
-    el.fileInput = document.getElementById('fileInput');
-    el.uploadBtn = document.getElementById('uploadBtn');
-    el.previewArea = document.getElementById('previewArea');
-    el.previewImage = document.getElementById('previewImage');
-    el.parallaxCanvas = document.getElementById('parallaxCanvas');
-    el.resultVideo = document.getElementById('resultVideo');
-    el.canvasInner = document.getElementById('canvasInner');
-    el.controls = document.getElementById('controls');
-    el.btnVida = document.getElementById('btnVida');
-    el.btnParallax = document.getElementById('btnParallax');
-    el.newImageBtn = document.getElementById('newImageBtn');
-    el.progressContainer = document.getElementById('progressContainer');
-    el.progressFill = document.getElementById('progressFill');
-    el.progressText = document.getElementById('progressText');
-    el.galleryHandle = document.getElementById('galleryHandle');
-    el.gallerySection = document.getElementById('gallerySection');
-    el.galleryGrid = document.getElementById('galleryGrid');
-    el.galleryEmpty = document.getElementById('galleryEmpty');
-    el.galleryCount = document.getElementById('galleryCount');
-    el.usageCount = document.getElementById('usageCount');
-    el.usageCount.textContent = state.usageCount;
-    el.btnVida.disabled = false;
-
-    loadGallery();
-    setupEvents();
-    renderGallery();
-  }
-
-  // ===== EVENTS =====
-  function setupEvents() {
-    el.uploadBtn.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); el.fileInput.click(); });
-    el.uploadZone.addEventListener('click', function(e) {
-      if (e.target.closest('.upload-btn')) return;
-      el.fileInput.click();
-    });
-    el.fileInput.addEventListener('change', function(e) {
-      if (e.target.files && e.target.files[0]) processFile(e.target.files[0]);
-    });
-    el.uploadZone.addEventListener('dragover', function(e) { e.preventDefault(); e.stopPropagation(); el.uploadZone.classList.add('drag-over'); });
-    el.uploadZone.addEventListener('dragleave', function(e) { e.preventDefault(); e.stopPropagation(); el.uploadZone.classList.remove('drag-over'); });
-    el.uploadZone.addEventListener('drop', function(e) {
-      e.preventDefault(); e.stopPropagation(); el.uploadZone.classList.remove('drag-over');
-      if (e.dataTransfer.files && e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]);
-    });
-
-    el.btnVida.addEventListener('click', darVida);
-    el.btnParallax.addEventListener('click', startParallax);
-    el.newImageBtn.addEventListener('click', resetToUpload);
-    el.galleryHandle.addEventListener('click', function() {
-      state.galleryOpen = !state.galleryOpen;
-      el.gallerySection.classList.toggle('collapsed', !state.galleryOpen);
-    });
-
-
-  }
-
-  // ===== FILE HANDLING =====
-  function processFile(file) {
-    if (!file.type.startsWith('image/')) { alert('Por favor, selecione uma imagem!'); return; }
-    state.currentFile = file;
-    var reader = new FileReader();
-    reader.onload = function(e) {
-      state.currentImageData = e.target.result;
-      state.currentImage = file.name;
-      showPreview(e.target.result);
+// --- Resize to 768x768 ---
+function resizeTo768(file){
+  return new Promise(function(resolve){
+    var img = new Image();
+    img.onload = function(){
+      var c = document.createElement('canvas');
+      c.width = 768; c.height = 768;
+      var ctx = c.getContext('2d');
+      ctx.drawImage(img, 0, 0, 768, 768);
+      c.toBlob(function(blob){resolve(blob);}, 'image/png');
     };
-    reader.readAsDataURL(file);
-  }
+    img.src = URL.createObjectURL(file);
+  });
+}
 
-  function showPreview(dataUrl) {
-    el.previewImage.src = dataUrl;
-    el.previewImage.onload = function() {
-      el.uploadZone.classList.add('hidden');
-      el.previewArea.classList.remove('hidden');
-      el.previewImage.hidden = false;
-      el.resultVideo.hidden = true;
-      el.parallaxCanvas.hidden = true;
-      el.controls.classList.remove('hidden');
-      stopParallax();
-    };
-  }
+// --- Dar Vida (API) ---
+btnVida.addEventListener('click', async function(){
+  if(!currentFile) return;
+  btnVida.disabled = true;
+  setStatus('<span class="loading-spinner"></span> Gerando animacao... pode levar ate 2 minutos.');
 
-  function resetToUpload() {
-    stopParallax();
-    stopAudio();
-    el.previewArea.classList.add('hidden');
-    el.controls.classList.add('hidden');
-    el.uploadZone.classList.remove('hidden');
-    el.progressContainer.classList.add('hidden');
-    el.resultVideo.hidden = true;
-    el.parallaxCanvas.hidden = true;
-    el.previewImage.hidden = false;
-    state.currentImage = null;
-    state.currentImageData = null;
-    state.currentFile = null;
-    el.fileInput.value = '';
-  }
+  try{
+    var resized = await resizeTo768(currentFile);
+    var formData = new FormData();
+    formData.append('image', resized, 'image.png');
+    formData.append('seed', '0');
+    formData.append('cfg_scale', '2.5');
+    formData.append('motion_bucket_id', '127');
 
-  // ===== DAR VIDA (Stability AI) =====
-  function incrementUsage() {
-    state.usageCount++;
-    localStorage.setItem('islanda-usage-count', state.usageCount.toString());
-    el.usageCount.textContent = state.usageCount;
-  }
-
-  function darVida() {
-    if (state.isProcessing) return;
-    state.isProcessing = true;
-    stopParallax();
-    stopAudio();
-    el.btnVida.disabled = true;
-    el.btnParallax.disabled = true;
-    el.progressContainer.classList.remove('hidden');
-    updateProgress(5, '🌟 Enviando sua obra para a IA...');
-
-    // Resize image to 1024x576 (required by Stability)
-    resizeImage(state.currentImageData, 1024, 576, function(resizedBlob) {
-      var formData = new FormData();
-      formData.append('image', resizedBlob, 'image.png');
-      formData.append('seed', '0');
-      formData.append('cfg_scale', '2.5');
-      formData.append('motion_bucket_id', '40');
-
-      updateProgress(15, '🎨 A IA esta dando vida a sua obra...');
-
-      // Step 1: Start generation
-      fetch('https://api.stability.ai/v2beta/image-to-video', {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + API_KEY },
-        body: formData
-      })
-      .then(function(res) {
-        if (!res.ok) throw new Error('Erro na API: ' + res.status);
-        return res.json();
-      })
-      .then(function(data) {
-        var generationId = data.id;
-        updateProgress(30, '✨ Video sendo gerado... aguarde (~30s)');
-        // Step 2: Poll for result
-        pollForResult(generationId, 0);
-      })
-      .catch(function(err) {
-        updateProgress(0, '❌ Erro: ' + err.message);
-        setTimeout(function() { resetProcessing(); }, 3000);
-      });
+    var resp = await fetch(API_URL, {
+      method: 'POST',
+      headers: {'authorization': 'Bearer ' + API_KEY},
+      body: formData
     });
-  }
 
-  function pollForResult(generationId, attempts) {
-    if (attempts > 60) {
-      updateProgress(0, '❌ Timeout - tente novamente');
-      resetProcessing();
-      return;
+    if(!resp.ok){
+      var err = await resp.text();
+      throw new Error('API error: ' + resp.status + ' ' + err);
     }
 
-    var progress = Math.min(30 + attempts * 2, 90);
-    updateProgress(progress, '✨ Gerando movimentos... (' + (attempts * 2) + 's)');
+    var data = await resp.json();
+    var genId = data.id;
+    setStatus('<span class="loading-spinner"></span> Processando video (ID: ' + genId + ')...');
 
-    fetch('https://api.stability.ai/v2beta/image-to-video/result/' + generationId, {
-      method: 'GET',
+    // Poll for result
+    var videoBlob = await pollResult(genId);
+    var videoUrl = URL.createObjectURL(videoBlob);
+    videoPreview.src = videoUrl;
+    videoPreview.style.display = 'block';
+    videoPreview.play();
+    stopEffect();
+
+    usageCount++;
+    localStorage.setItem('islanda_usage', usageCount.toString());
+    updateCounter();
+
+    addToGallery(videoUrl, 'video');
+    setStatus('✨ Animacao criada com sucesso!');
+  } catch(e){
+    setStatus('❌ Erro: ' + e.message);
+  }
+  btnVida.disabled = false;
+});
+
+async function pollResult(id){
+  var url = API_URL + '/result/' + id;
+  while(true){
+    await new Promise(function(r){setTimeout(r, 3000);});
+    var resp = await fetch(url, {
       headers: {
-        'Authorization': 'Bearer ' + API_KEY,
-        'Accept': 'video/*'
+        'authorization': 'Bearer ' + API_KEY,
+        'accept': 'video/*'
       }
-    })
-    .then(function(res) {
-      if (res.status === 202) {
-        // Still processing
-        setTimeout(function() { pollForResult(generationId, attempts + 1); }, 2000);
-        return null;
+    });
+    if(resp.status === 202){
+      continue;
+    }
+    if(resp.ok){
+      return await resp.blob();
+    }
+    var errText = await resp.text();
+    throw new Error('Poll error: ' + resp.status + ' ' + errText);
+  }
+}
+
+// --- Effects ---
+btnEfeitos.addEventListener('click', function(){
+  effectsPanel.classList.toggle('visible');
+});
+
+var effectBtns = document.querySelectorAll('.btn-effect');
+effectBtns.forEach(function(btn){
+  btn.addEventListener('click', function(){
+    effectBtns.forEach(function(b){b.classList.remove('active');});
+    btn.classList.add('active');
+    startEffect(btn.getAttribute('data-effect'));
+  });
+});
+
+function stopEffect(){
+  if(animFrameId){cancelAnimationFrame(animFrameId);animFrameId=null;}
+  currentEffect = null;
+  effectCanvas.style.display = 'none';
+  previewImg.style.transform = '';
+  previewImg.style.transition = '';
+  particles = [];
+}
+
+function startEffect(type){
+  stopEffect();
+  currentEffect = type;
+  videoPreview.style.display = 'none';
+  effectCanvas.style.display = 'block';
+  var rect = previewContainer.getBoundingClientRect();
+  effectCanvas.width = rect.width;
+  effectCanvas.height = rect.height;
+  var ctx = effectCanvas.getContext('2d');
+  particles = createParticles(20);
+  initAmbientSound(type);
+
+  if(type === 'parallax') runParallax(ctx);
+  else if(type === 'ondas') runOndas(ctx);
+  else if(type === 'flutuante') runFlutuante(ctx);
+  else if(type === 'cinematic') runCinematic(ctx);
+}
+
+// --- Particles ---
+function createParticles(n){
+  var arr = [];
+  for(var i=0;i<n;i++){
+    arr.push({
+      x: Math.random()*effectCanvas.width,
+      y: Math.random()*effectCanvas.height,
+      size: Math.random()*4+1,
+      speedX: (Math.random()-0.5)*0.5,
+      speedY: -Math.random()*0.8-0.2,
+      opacity: Math.random()*0.7+0.3,
+      hue: Math.random()*60+270
+    });
+  }
+  return arr;
+}
+
+function drawParticles(ctx){
+  particles.forEach(function(p){
+    p.x += p.speedX;
+    p.y += p.speedY;
+    if(p.y < -10){p.y = effectCanvas.height + 10; p.x = Math.random()*effectCanvas.width;}
+    if(p.x < -10) p.x = effectCanvas.width + 10;
+    if(p.x > effectCanvas.width + 10) p.x = -10;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+    ctx.fillStyle = 'hsla('+p.hue+',80%,70%,'+p.opacity+')';
+    ctx.fill();
+  });
+}
+
+// --- Parallax 2.5D ---
+var mouseX = 0.5, mouseY = 0.5;
+canvasFrame.addEventListener('mousemove', function(e){
+  var rect = canvasFrame.getBoundingClientRect();
+  mouseX = (e.clientX - rect.left) / rect.width;
+  mouseY = (e.clientY - rect.top) / rect.height;
+});
+
+function runParallax(ctx){
+  var img = new Image();
+  img.src = previewImg.src;
+  img.onload = function(){
+    var layers = [
+      {depth:0.02, scale:1.05},
+      {depth:0.04, scale:1.1},
+      {depth:0.06, scale:1.15}
+    ];
+    function animate(){
+      ctx.clearRect(0,0,effectCanvas.width,effectCanvas.height);
+      var cw = effectCanvas.width, ch = effectCanvas.height;
+      layers.forEach(function(layer){
+        var offX = (mouseX - 0.5) * cw * layer.depth;
+        var offY = (mouseY - 0.5) * ch * layer.depth;
+        var s = layer.scale;
+        var dw = cw * s, dh = ch * s;
+        var dx = (cw - dw)/2 + offX;
+        var dy = (ch - dh)/2 + offY;
+        ctx.globalAlpha = 0.35;
+        ctx.drawImage(img, dx, dy, dw, dh);
+      });
+      ctx.globalAlpha = 1;
+      drawParticles(ctx);
+      animFrameId = requestAnimationFrame(animate);
+    }
+    animate();
+  };
+}
+
+// --- Ondas ---
+function runOndas(ctx){
+  var img = new Image();
+  img.src = previewImg.src;
+  img.onload = function(){
+    var t = 0;
+    function animate(){
+      ctx.clearRect(0,0,effectCanvas.width,effectCanvas.height);
+      var cw = effectCanvas.width, ch = effectCanvas.height;
+      var sliceH = 4;
+      for(var y=0; y<ch; y+=sliceH){
+        var offset = Math.sin((y*0.02) + t*0.03) * 8;
+        ctx.drawImage(img, 0, y*(img.naturalHeight/ch), img.naturalWidth, sliceH*(img.naturalHeight/ch),
+          offset, y, cw, sliceH);
       }
-      if (!res.ok) throw new Error('Erro ao buscar resultado: ' + res.status);
-      return res.blob();
-    })
-    .then(function(blob) {
-      if (!blob) return;
-      updateProgress(100, '🎉 Sua obra ganhou vida!');
-      incrementUsage();
-      var videoUrl = URL.createObjectURL(blob);
-      showVideo(videoUrl);
-      addToGallery(videoUrl, blob, 'vida');
-      setTimeout(function() { resetProcessing(); }, 2000);
-    })
-    .catch(function(err) {
-      updateProgress(0, '❌ Erro: ' + err.message);
-      setTimeout(function() { resetProcessing(); }, 3000);
-    });
-  }
-
-  function showVideo(url) {
-    el.previewImage.hidden = true;
-    el.parallaxCanvas.hidden = true;
-    el.resultVideo.hidden = false;
-    el.resultVideo.src = url;
-    el.resultVideo.play();
-  }
-
-  function resizeImage(dataUrl, targetW, targetH, callback) {
-    var img = new Image();
-    img.onload = function() {
-      var canvas = document.createElement('canvas');
-      canvas.width = targetW; canvas.height = targetH;
-      var ctx = canvas.getContext('2d');
-      // Fill black then draw centered
-      ctx.fillStyle = '#000';
-      ctx.fillRect(0, 0, targetW, targetH);
-      var scale = Math.max(targetW / img.width, targetH / img.height);
-      var w = img.width * scale, h = img.height * scale;
-      ctx.drawImage(img, (targetW - w) / 2, (targetH - h) / 2, w, h);
-      canvas.toBlob(callback, 'image/png');
-    };
-    img.src = dataUrl;
-  }
-
-  // ===== PARALLAX 2.5D =====
-  function startParallax() {
-    if (state.isProcessing) return;
-    stopParallax();
-    state.isProcessing = true;
-    el.btnVida.disabled = true;
-    el.btnParallax.disabled = true;
-    el.progressContainer.classList.remove('hidden');
-    updateProgress(20, '🎭 Criando efeito parallax 2.5D...');
-
-    el.previewImage.hidden = true;
-    el.resultVideo.hidden = true;
-    el.parallaxCanvas.hidden = false;
-
-    var canvas = el.parallaxCanvas;
-    canvas.width = el.canvasInner.offsetWidth;
-    canvas.height = el.canvasInner.offsetHeight;
-
-    var img = new Image();
-    img.onload = function() {
-      updateProgress(60, '🎭 Aplicando profundidade...');
-
-      setTimeout(function() {
-        updateProgress(100, '🎭 Parallax ativo! Mova o mouse sobre a imagem.');
-        state.parallaxActive = true;
-
-        var mouseX = 0.5, mouseY = 0.5;
-        var targetX = 0.5, targetY = 0.5;
-
-        el.canvasInner.addEventListener('mousemove', onMouseMove);
-        el.canvasInner.addEventListener('touchmove', onTouchMove);
-
-        function onMouseMove(e) {
-          var rect = el.canvasInner.getBoundingClientRect();
-          targetX = (e.clientX - rect.left) / rect.width;
-          targetY = (e.clientY - rect.top) / rect.height;
-        }
-        function onTouchMove(e) {
-          e.preventDefault();
-          var rect = el.canvasInner.getBoundingClientRect();
-          var touch = e.touches[0];
-          targetX = (touch.clientX - rect.left) / rect.width;
-          targetY = (touch.clientY - rect.top) / rect.height;
-        }
-
-        var ctx = canvas.getContext('2d');
-        var time = 0;
-
-        function animate() {
-          if (!state.parallaxActive) return;
-          time += 0.016;
-
-          // Smooth follow
-          mouseX += (targetX - mouseX) * 0.05;
-          mouseY += (targetY - mouseY) * 0.05;
-
-          // Auto movement when no interaction
-          var autoX = Math.sin(time * 0.3) * 0.1;
-          var autoY = Math.cos(time * 0.2) * 0.08;
-          var mx = mouseX - 0.5 + autoX;
-          var my = mouseY - 0.5 + autoY;
-
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-          // Layer 1 - Background (moves opposite, slow)
-          var bgScale = 1.2;
-          var bgOffX = mx * -15;
-          var bgOffY = my * -10;
-          drawImageLayer(ctx, img, canvas, bgScale, bgOffX, bgOffY, 0.4);
-
-          // Layer 2 - Mid (slight blur effect via opacity layers)
-          var midScale = 1.12;
-          var midOffX = mx * -8;
-          var midOffY = my * -6;
-          drawImageLayer(ctx, img, canvas, midScale, midOffX, midOffY, 0.3);
-
-          // Layer 3 - Main image
-          var mainScale = 1.06;
-          var mainOffX = mx * 5;
-          var mainOffY = my * 4;
-          drawImageLayer(ctx, img, canvas, mainScale, mainOffX, mainOffY, 1.0);
-
-          // Layer 4 - Foreground glow particles
-          drawParticles(ctx, canvas, time, mx, my);
-
-          // Depth vignette
-          var vg = ctx.createRadialGradient(canvas.width/2, canvas.height/2, canvas.width*0.25, canvas.width/2, canvas.height/2, canvas.width*0.6);
-          vg.addColorStop(0, 'rgba(0,0,0,0)');
-          vg.addColorStop(1, 'rgba(0,0,0,0.2)');
-          ctx.fillStyle = vg;
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-          state.parallaxFrame = requestAnimationFrame(animate);
-        }
-
-        state.parallaxFrame = requestAnimationFrame(animate);
-        startAmbientAudio();
-
-        // Save parallax as entry in gallery (capture a frame)
-        setTimeout(function() {
-          var thumb = canvas.toDataURL('image/jpeg', 0.7);
-          addToGalleryThumb(thumb, 'parallax');
-          resetProcessing();
-        }, 500);
-
-      }, 600);
-    };
-    img.src = state.currentImageData;
-  }
-
-  function drawImageLayer(ctx, img, canvas, scale, offX, offY, alpha) {
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    var w = canvas.width * scale;
-    var h = canvas.height * scale;
-    var x = (canvas.width - w) / 2 + offX;
-    var y = (canvas.height - h) / 2 + offY;
-    ctx.drawImage(img, x, y, w, h);
-    ctx.restore();
-  }
-
-  function drawParticles(ctx, canvas, time, mx, my) {
-    ctx.save();
-    for (var i = 0; i < 15; i++) {
-      var seed = i * 1.7;
-      var px = (Math.sin(time * 0.4 + seed) * 0.4 + 0.5) * canvas.width + mx * 20;
-      var py = (Math.cos(time * 0.3 + seed * 1.3) * 0.4 + 0.5) * canvas.height + my * 15;
-      var sz = (Math.sin(time * 2 + seed) * 0.5 + 0.5) * 3 + 1;
-      var alpha = (Math.sin(time * 1.5 + seed) * 0.5 + 0.5) * 0.6;
-      ctx.globalAlpha = alpha;
-      ctx.beginPath();
-      ctx.arc(px, py, sz, 0, Math.PI * 2);
-      var hue = (time * 20 + i * 25) % 360;
-      ctx.fillStyle = 'hsla(' + hue + ', 80%, 75%, 1)';
-      ctx.fill();
-      // Glow
-      ctx.shadowBlur = 10;
-      ctx.shadowColor = 'hsla(' + hue + ', 80%, 75%, 0.5)';
+      drawParticles(ctx);
+      t++;
+      animFrameId = requestAnimationFrame(animate);
     }
-    ctx.restore();
-  }
+    animate();
+  };
+}
 
-  function stopParallax() {
-    state.parallaxActive = false;
-    if (state.parallaxFrame) {
-      cancelAnimationFrame(state.parallaxFrame);
-      state.parallaxFrame = null;
+// --- Flutuante ---
+function runFlutuante(ctx){
+  var t = 0;
+  function animate(){
+    ctx.clearRect(0,0,effectCanvas.width,effectCanvas.height);
+    var scale = 1 + Math.sin(t*0.015)*0.03;
+    var rot = Math.sin(t*0.01)*1.5;
+    previewImg.style.transform = 'scale('+scale+') rotate('+rot+'deg)';
+    previewImg.style.transition = 'transform 0.1s ease';
+    drawParticles(ctx);
+    t++;
+    animFrameId = requestAnimationFrame(animate);
+  }
+  animate();
+}
+
+// --- Cinematic (Ken Burns) ---
+function runCinematic(ctx){
+  var img = new Image();
+  img.src = previewImg.src;
+  img.onload = function(){
+    var t = 0;
+    var duration = 600;
+    function animate(){
+      ctx.clearRect(0,0,effectCanvas.width,effectCanvas.height);
+      var cw = effectCanvas.width, ch = effectCanvas.height;
+      var progress = (t % duration) / duration;
+      var scale = 1.0 + progress * 0.15;
+      var panX = progress * 20 - 10;
+      var panY = progress * 10 - 5;
+      var dw = cw * scale, dh = ch * scale;
+      var dx = (cw - dw)/2 + panX;
+      var dy = (ch - dh)/2 + panY;
+      ctx.drawImage(img, dx, dy, dw, dh);
+      drawParticles(ctx);
+      t++;
+      animFrameId = requestAnimationFrame(animate);
     }
-  }
+    animate();
+  };
+}
 
-  // ===== AMBIENT AUDIO =====
-  function startAmbientAudio() {
-    try {
-      if (!state.audioCtx) state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      var ctx = state.audioCtx;
-      if (ctx.state === 'suspended') ctx.resume();
+// --- Ambient Sound (Web Audio API) ---
+function initAmbientSound(type){
+  if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  var osc = audioCtx.createOscillator();
+  var gain = audioCtx.createGain();
+  gain.gain.value = 0.03;
+  osc.type = 'sine';
+  if(type === 'parallax') osc.frequency.value = 120;
+  else if(type === 'ondas') osc.frequency.value = 80;
+  else if(type === 'flutuante') osc.frequency.value = 150;
+  else if(type === 'cinematic') osc.frequency.value = 100;
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  // Fade out after 3 seconds
+  gain.gain.setTargetAtTime(0, audioCtx.currentTime + 2, 0.5);
+  setTimeout(function(){osc.stop();}, 4000);
+}
 
-      // Soft ambient pad
-      var osc1 = ctx.createOscillator();
-      var osc2 = ctx.createOscillator();
-      var gain = ctx.createGain();
-      var filter = ctx.createBiquadFilter();
-
-      osc1.type = 'sine'; osc1.frequency.value = 220;
-      osc2.type = 'sine'; osc2.frequency.value = 330;
-      filter.type = 'lowpass'; filter.frequency.value = 400;
-      gain.gain.value = 0;
-      gain.gain.linearRampToValueAtTime(0.06, ctx.currentTime + 2);
-
-      osc1.connect(filter); osc2.connect(filter);
-      filter.connect(gain); gain.connect(ctx.destination);
-      osc1.start(); osc2.start();
-
-      // Gentle frequency modulation
-      var lfo = ctx.createOscillator();
-      var lfoGain = ctx.createGain();
-      lfo.frequency.value = 0.1; lfoGain.gain.value = 5;
-      lfo.connect(lfoGain); lfoGain.connect(osc1.frequency);
-      lfo.start();
-
-      state.audioNodes = [osc1, osc2, lfo, gain];
-    } catch(e) {}
-  }
-
-  function stopAudio() {
-    try {
-      state.audioNodes.forEach(function(node) {
-        if (node.stop) node.stop();
-        if (node.disconnect) node.disconnect();
-      });
-      state.audioNodes = [];
-    } catch(e) {}
-  }
-
-  // ===== GALLERY =====
-  function addToGallery(videoUrl, blob, type) {
-    var thumbCanvas = document.createElement('canvas');
-    thumbCanvas.width = 320; thumbCanvas.height = 180;
-    var tc = thumbCanvas.getContext('2d');
-    var img = new Image(); img.src = state.currentImageData;
-    img.onload = function() {
-      tc.fillStyle = '#1F1B2E'; tc.fillRect(0, 0, 320, 180);
-      var sc = Math.min(320 / img.naturalWidth, 180 / img.naturalHeight);
-      tc.drawImage(img, (320 - img.naturalWidth * sc) / 2, (180 - img.naturalHeight * sc) / 2, img.naturalWidth * sc, img.naturalHeight * sc);
-      var entry = {
-        id: Date.now().toString(), name: state.currentImage || 'Obra',
-        type: type, date: new Date().toLocaleDateString('pt-BR'),
-        videoUrl: videoUrl, thumbnail: thumbCanvas.toDataURL('image/jpeg', 0.7)
-      };
-      state.gallery.unshift(entry); saveGallery(); renderGallery();
-    };
-  }
-
-  function addToGalleryThumb(thumb, type) {
-    var entry = {
-      id: Date.now().toString(), name: state.currentImage || 'Obra',
-      type: type, date: new Date().toLocaleDateString('pt-BR'),
-      videoUrl: null, thumbnail: thumb
-    };
-    state.gallery.unshift(entry); saveGallery(); renderGallery();
-  }
-
-  function renderGallery() {
-    el.galleryCount.textContent = state.gallery.length;
-    if (state.gallery.length === 0) { el.galleryEmpty.classList.remove('hidden'); el.galleryGrid.innerHTML = ''; return; }
-    el.galleryEmpty.classList.add('hidden');
-    el.galleryGrid.innerHTML = state.gallery.map(function(item) {
-      var badge = item.type === 'vida' ? '<span class="gallery-item-badge">🌟 IA</span>' : '<span class="gallery-item-badge parallax">🎭 Parallax</span>';
-      return '<div class="gallery-item" data-id="' + item.id + '">' +
-        '<div style="position:relative"><img class="gallery-item-thumb" src="' + item.thumbnail + '"><div class="gallery-item-play">▶</div></div>' +
-        '<div class="gallery-item-info"><div class="gallery-item-name">' + item.name + '</div>' +
-        '<div class="gallery-item-meta">' + badge + '<span>' + item.date + '</span></div></div></div>';
-    }).join('');
-    document.querySelectorAll('.gallery-item').forEach(function(item) {
-      item.addEventListener('click', function() {
-        var entry = state.gallery.find(function(g) { return g.id === item.dataset.id; });
-        if (entry && entry.videoUrl) playModal(entry);
-        else if (entry && entry.type === 'parallax') alert('O efeito Parallax e ao vivo! Envie a mesma imagem e clique Parallax novamente.');
-      });
+// --- Gallery ---
+function renderGallery(){
+  galleryGrid.innerHTML = '';
+  gallery.forEach(function(item, idx){
+    var div = document.createElement('div');
+    div.className = 'gallery-item';
+    if(item.type === 'video'){
+      var vid = document.createElement('video');
+      vid.src = item.src;
+      vid.loop = true; vid.muted = true; vid.autoplay = true;
+      div.appendChild(vid);
+    } else {
+      var im = document.createElement('img');
+      im.src = item.src;
+      div.appendChild(im);
+    }
+    var delBtn = document.createElement('button');
+    delBtn.className = 'delete-btn';
+    delBtn.textContent = 'X';
+    delBtn.addEventListener('click', function(){
+      gallery.splice(idx, 1);
+      localStorage.setItem('islanda_gallery', JSON.stringify(gallery));
+      renderGallery();
     });
-  }
+    div.appendChild(delBtn);
+    galleryGrid.appendChild(div);
+  });
+}
 
-  function playModal(entry) {
-    var modal = document.createElement('div'); modal.className = 'video-modal active';
-    modal.innerHTML = '<div class="video-modal-content"><button class="modal-close">&times;</button>' +
-      '<video controls autoplay loop><source src="' + entry.videoUrl + '" type="video/mp4"></video>' +
-      '<button class="modal-download">⬇️ Baixar Video</button></div>';
-    document.body.appendChild(modal);
-    modal.querySelector('.modal-close').addEventListener('click', function() { modal.remove(); });
-    modal.addEventListener('click', function(e) { if (e.target === modal) modal.remove(); });
-    modal.querySelector('.modal-download').addEventListener('click', function() {
-      var a = document.createElement('a'); a.href = entry.videoUrl;
-      a.download = 'islanda-animada-' + entry.name.replace(/[^a-z0-9]/gi, '-') + '.mp4';
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    });
-  }
+function addToGallery(src, type){
+  gallery.push({src: src, type: type});
+  // Only store data URLs in localStorage (blobs won't persist)
+  try{localStorage.setItem('islanda_gallery', JSON.stringify(gallery));}catch(e){}
+  renderGallery();
+}
 
-  function saveGallery() {
-    try {
-      var meta = state.gallery.map(function(i) { return { id: i.id, name: i.name, type: i.type, date: i.date, thumbnail: i.thumbnail }; });
-      localStorage.setItem('islanda-gallery', JSON.stringify(meta));
-    } catch(e) {}
-  }
-  function loadGallery() {
-    try { var s = localStorage.getItem('islanda-gallery'); if (s) state.gallery = JSON.parse(s).map(function(i) { i.videoUrl = null; return i; }); } catch(e) { state.gallery = []; }
-  }
+renderGallery();
 
-  // ===== UTILS =====
-  function updateProgress(pct, txt) { el.progressFill.style.width = pct + '%'; el.progressText.textContent = txt; }
-  function resetProcessing() {
-    state.isProcessing = false;
-    el.btnVida.disabled = false;
-    el.btnParallax.disabled = false;
-    el.progressContainer.classList.add('hidden');
-  }
-
-  // ===== START =====
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-  else init();
+});
 })();
 </script>
 </body>
