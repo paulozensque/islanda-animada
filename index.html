@@ -207,8 +207,8 @@ body {
 <script>
 (function() {
   'use strict';
-  const state = { currentImage: null, currentImageData: null, selectedEffect: 'parallax', isAnimating: false, isGenerating: false, gallery: [], galleryOpen: true, animationFrame: null };
-  const el = {};
+  var state = { currentImage: null, currentImageData: null, selectedEffect: 'parallax', isAnimating: false, isGenerating: false, gallery: [], galleryOpen: true, animationFrame: null };
+  var el = {};
 
   function init() {
     el.uploadZone = document.getElementById('uploadZone');
@@ -230,55 +230,127 @@ body {
     el.galleryGrid = document.getElementById('galleryGrid');
     el.galleryEmpty = document.getElementById('galleryEmpty');
     el.galleryCount = document.getElementById('galleryCount');
-    loadGallery(); setupEvents(); renderGallery();
+    loadGallery();
+    setupEvents();
+    renderGallery();
   }
 
   function setupEvents() {
-    el.uploadBtn.addEventListener('click', function(e) { e.stopPropagation(); el.fileInput.click(); });
-    el.uploadZone.addEventListener('click', function() { el.fileInput.click(); });
-    el.fileInput.addEventListener('change', function(e) { if(e.target.files[0]) processFile(e.target.files[0]); });
-    el.uploadZone.addEventListener('dragover', function(e) { e.preventDefault(); el.uploadZone.classList.add('drag-over'); });
-    el.uploadZone.addEventListener('dragleave', function(e) { e.preventDefault(); el.uploadZone.classList.remove('drag-over'); });
-    el.uploadZone.addEventListener('drop', function(e) { e.preventDefault(); el.uploadZone.classList.remove('drag-over'); if(e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]); });
-    document.querySelectorAll('.anim-btn').forEach(function(btn) { btn.addEventListener('click', function() { selectEffect(btn); }); });
+    el.uploadBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      el.fileInput.click();
+    });
+    el.uploadZone.addEventListener('click', function(e) {
+      if (e.target === el.uploadBtn || el.uploadBtn.contains(e.target)) return;
+      el.fileInput.click();
+    });
+    el.fileInput.addEventListener('change', function(e) {
+      var files = e.target.files;
+      if (files && files.length > 0) {
+        processFile(files[0]);
+      }
+    });
+    el.uploadZone.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      el.uploadZone.classList.add('drag-over');
+    });
+    el.uploadZone.addEventListener('dragleave', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      el.uploadZone.classList.remove('drag-over');
+    });
+    el.uploadZone.addEventListener('drop', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      el.uploadZone.classList.remove('drag-over');
+      var files = e.dataTransfer.files;
+      if (files && files.length > 0) {
+        processFile(files[0]);
+      }
+    });
+    document.querySelectorAll('.anim-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() { selectEffect(btn); });
+    });
     el.previewBtn.addEventListener('click', previewAnimation);
     el.generateBtn.addEventListener('click', generateVideo);
     el.newImageBtn.addEventListener('click', resetToUpload);
-    el.galleryHandle.addEventListener('click', function() { state.galleryOpen = !state.galleryOpen; el.gallerySection.classList.toggle('collapsed', !state.galleryOpen); });
+    el.galleryHandle.addEventListener('click', function() {
+      state.galleryOpen = !state.galleryOpen;
+      el.gallerySection.classList.toggle('collapsed', !state.galleryOpen);
+    });
   }
 
   function processFile(file) {
-    if(!file.type.startsWith('image/')) { alert('Por favor, selecione uma imagem!'); return; }
+    if (!file.type.startsWith('image/')) {
+      alert('Por favor, selecione uma imagem (PNG, JPG, etc.)!');
+      return;
+    }
     var reader = new FileReader();
-    reader.onload = function(e) { state.currentImageData = e.target.result; state.currentImage = file.name; showPreview(e.target.result); };
+    reader.onload = function(e) {
+      state.currentImageData = e.target.result;
+      state.currentImage = file.name;
+      showPreview(e.target.result);
+    };
     reader.readAsDataURL(file);
   }
 
   function showPreview(dataUrl) {
     el.previewImage.src = dataUrl;
-    el.previewImage.onload = function() { el.uploadZone.classList.add('hidden'); el.previewArea.classList.remove('hidden'); el.controls.classList.remove('hidden'); setupCanvas(); };
+    el.previewImage.onload = function() {
+      el.uploadZone.classList.add('hidden');
+      el.previewArea.classList.remove('hidden');
+      el.controls.classList.remove('hidden');
+      setupCanvas();
+    };
   }
 
-  function setupCanvas() { var c = el.animationCanvas; c.width = el.canvasInner.offsetWidth; c.height = el.canvasInner.offsetHeight; }
+  function setupCanvas() {
+    var c = el.animationCanvas;
+    c.width = el.canvasInner.offsetWidth;
+    c.height = el.canvasInner.offsetHeight;
+  }
 
   function resetToUpload() {
-    stopAnimation(); el.previewArea.classList.add('hidden'); el.controls.classList.add('hidden');
-    el.uploadZone.classList.remove('hidden'); el.progressContainer.classList.add('hidden');
-    state.currentImage = null; state.currentImageData = null; el.fileInput.value = '';
+    stopAnimation();
+    el.previewArea.classList.add('hidden');
+    el.controls.classList.add('hidden');
+    el.uploadZone.classList.remove('hidden');
+    el.progressContainer.classList.add('hidden');
+    state.currentImage = null;
+    state.currentImageData = null;
+    el.fileInput.value = '';
   }
 
-  function selectEffect(btn) { document.querySelectorAll('.anim-btn').forEach(function(b) { b.classList.remove('active'); }); btn.classList.add('active'); state.selectedEffect = btn.dataset.effect; }
+  function selectEffect(btn) {
+    document.querySelectorAll('.anim-btn').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    state.selectedEffect = btn.dataset.effect;
+  }
 
   function previewAnimation() {
-    if(state.isAnimating) { stopAnimation(); el.previewBtn.innerHTML = '<span>▶️</span> Pre-visualizar'; return; }
-    el.previewBtn.innerHTML = '<span>⏹️</span> Parar'; startAnimation(state.selectedEffect);
+    if (state.isAnimating) {
+      stopAnimation();
+      el.previewBtn.innerHTML = '<span>▶️</span> Pre-visualizar';
+      return;
+    }
+    el.previewBtn.innerHTML = '<span>⏹️</span> Parar';
+    startAnimation(state.selectedEffect);
   }
 
   function startAnimation(effect) {
-    state.isAnimating = true; var canvas = el.animationCanvas; var ctx = canvas.getContext('2d'); setupCanvas();
-    var img = new Image(); img.src = state.currentImageData;
-    img.onload = function() { var startTime = performance.now();
-      function animate(t) { if(!state.isAnimating) return; var elapsed = (t - startTime) / 1000;
+    state.isAnimating = true;
+    var canvas = el.animationCanvas;
+    var ctx = canvas.getContext('2d');
+    setupCanvas();
+    var img = new Image();
+    img.src = state.currentImageData;
+    img.onload = function() {
+      var startTime = performance.now();
+      function animate(t) {
+        if (!state.isAnimating) return;
+        var elapsed = (t - startTime) / 1000;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         applyEffect(ctx, img, canvas, elapsed, effect);
         state.animationFrame = requestAnimationFrame(animate);
@@ -287,7 +359,17 @@ body {
     };
   }
 
-  function stopAnimation() { state.isAnimating = false; if(state.animationFrame) { cancelAnimationFrame(state.animationFrame); state.animationFrame = null; } var ctx = el.animationCanvas.getContext('2d'); ctx.clearRect(0, 0, el.animationCanvas.width, el.animationCanvas.height); }
+  function stopAnimation() {
+    state.isAnimating = false;
+    if (state.animationFrame) {
+      cancelAnimationFrame(state.animationFrame);
+      state.animationFrame = null;
+    }
+    if (el.animationCanvas) {
+      var ctx = el.animationCanvas.getContext('2d');
+      ctx.clearRect(0, 0, el.animationCanvas.width, el.animationCanvas.height);
+    }
+  }
 
   function applyEffect(ctx, img, canvas, t, effect) {
     switch(effect) {
@@ -322,114 +404,185 @@ body {
     ctx.save(); ctx.translate(canvas.width/2, canvas.height/2);
     ctx.rotate(Math.sin(t*0.3)*0.04); var s=1.1;
     ctx.drawImage(img, -canvas.width*s/2, -canvas.height*s/2, canvas.width*s, canvas.height*s); ctx.restore();
-    for(var i=0;i<8;i++) { var px=(Math.sin(t*0.5+i*1.2)*0.4+0.5)*canvas.width, py=(Math.cos(t*0.3+i*0.8)*0.4+0.5)*canvas.height;
+    for(var i=0;i<8;i++) {
+      var px=(Math.sin(t*0.5+i*1.2)*0.4+0.5)*canvas.width;
+      var py=(Math.cos(t*0.3+i*0.8)*0.4+0.5)*canvas.height;
       ctx.beginPath(); ctx.arc(px,py,2+Math.sin(t+i)*1.5,0,Math.PI*2);
-      ctx.fillStyle='hsla('+(((t*30+i*45)%360))+',70%,70%,0.6)'; ctx.fill(); }
+      ctx.fillStyle='hsla('+(((t*30+i*45)%360))+',70%,70%,0.6)'; ctx.fill();
+    }
   }
 
   function animBrush(ctx, img, canvas, t) {
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
     var rev = Math.min(t/4, 1);
-    if(rev < 1) { var strokes = 12;
-      for(var i=0;i<strokes;i++) { var sp = Math.max(0,Math.min(1,(rev*strokes-i)));
-        if(sp<=0) { ctx.globalAlpha=0.9; ctx.fillStyle='#FAF7F0'; ctx.fillRect(0,(i/strokes)*canvas.height,canvas.width,canvas.height/strokes+2); } }
+    if(rev < 1) {
+      var strokes = 12;
+      for(var i=0;i<strokes;i++) {
+        var sp = Math.max(0,Math.min(1,(rev*strokes-i)));
+        if(sp<=0) { ctx.globalAlpha=0.9; ctx.fillStyle='#FAF7F0'; ctx.fillRect(0,(i/strokes)*canvas.height,canvas.width,canvas.height/strokes+2); }
+      }
       ctx.globalAlpha = 1;
     }
   }
 
   function animSparkle(ctx, img, canvas, t) {
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    for(var i=0;i<20;i++) { var ph=t*1.5+i*(Math.PI*2/20);
-      var x=(Math.sin(ph*0.7+i)*0.4+0.5)*canvas.width, y=(Math.cos(ph*0.5+i*1.3)*0.4+0.5)*canvas.height;
-      var sz=(Math.sin(ph*2)*0.5+0.5)*4+1, al=Math.sin(ph*2)*0.5+0.5;
+    for(var i=0;i<20;i++) {
+      var ph=t*1.5+i*(Math.PI*2/20);
+      var x=(Math.sin(ph*0.7+i)*0.4+0.5)*canvas.width;
+      var y=(Math.cos(ph*0.5+i*1.3)*0.4+0.5)*canvas.height;
+      var sz=(Math.sin(ph*2)*0.5+0.5)*4+1;
+      var al=Math.sin(ph*2)*0.5+0.5;
       ctx.save(); ctx.globalAlpha=al*0.8; ctx.translate(x,y); ctx.rotate(ph);
       ctx.beginPath(); ctx.fillStyle='hsla('+((45+i*15)%60+30)+',90%,75%,1)';
       for(var j=0;j<4;j++){var a=(j/4)*Math.PI*2; ctx.moveTo(0,0); ctx.lineTo(Math.cos(a)*sz,Math.sin(a)*sz);}
-      ctx.fill(); ctx.restore(); }
+      ctx.fill(); ctx.restore();
+    }
   }
 
   function animWave(ctx, img, canvas, t) {
     var sw=4, slices=Math.ceil(canvas.width/sw);
-    for(var i=0;i<slices;i++) { var x=i*sw, wo=Math.sin(t*2+i*0.1)*5;
-      ctx.drawImage(img, (x/canvas.width)*img.naturalWidth, 0, (sw/canvas.width)*img.naturalWidth, img.naturalHeight, x, wo, sw, canvas.height); }
+    for(var i=0;i<slices;i++) {
+      var x=i*sw, wo=Math.sin(t*2+i*0.1)*5;
+      ctx.drawImage(img, (x/canvas.width)*img.naturalWidth, 0, (sw/canvas.width)*img.naturalWidth, img.naturalHeight, x, wo, sw, canvas.height);
+    }
   }
-</script>
 
-<script>
   function generateVideo() {
-    if(state.isGenerating) return; state.isGenerating = true; stopAnimation();
-    el.generateBtn.disabled = true; el.progressContainer.classList.remove('hidden');
+    if (state.isGenerating) return;
+    state.isGenerating = true;
+    stopAnimation();
+    el.generateBtn.disabled = true;
+    el.progressContainer.classList.remove('hidden');
     updateProgress(0, 'Preparando animacao...');
-    var canvas = document.createElement('canvas'); canvas.width = 800; canvas.height = 600;
+    var canvas = document.createElement('canvas');
+    canvas.width = 800; canvas.height = 600;
     var ctx = canvas.getContext('2d');
-    var img = new Image(); img.src = state.currentImageData;
+    var img = new Image();
+    img.src = state.currentImageData;
     img.onload = function() {
       updateProgress(10, 'Iniciando gravacao...');
-      var stream = canvas.captureStream(30); var chunks = [];
+      var stream = canvas.captureStream(30);
+      var chunks = [];
       var mime = 'video/webm;codecs=vp9';
-      if(!MediaRecorder.isTypeSupported(mime)) mime = 'video/webm;codecs=vp8';
-      if(!MediaRecorder.isTypeSupported(mime)) mime = 'video/webm';
+      if (!MediaRecorder.isTypeSupported(mime)) mime = 'video/webm;codecs=vp8';
+      if (!MediaRecorder.isTypeSupported(mime)) mime = 'video/webm';
       var recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 2500000 });
-      recorder.ondataavailable = function(e) { if(e.data.size > 0) chunks.push(e.data); };
+      recorder.ondataavailable = function(e) { if (e.data.size > 0) chunks.push(e.data); };
       recorder.onstop = function() {
-        var blob = new Blob(chunks, {type:'video/webm'});
+        var blob = new Blob(chunks, { type: 'video/webm' });
         var videoUrl = URL.createObjectURL(blob);
         updateProgress(100, 'Video criado com sucesso! 🎉');
-        var thumbCanvas = document.createElement('canvas'); thumbCanvas.width=320; thumbCanvas.height=240;
-        var tc = thumbCanvas.getContext('2d'); tc.fillStyle='#FAF7F0'; tc.fillRect(0,0,320,240);
-        var sc = Math.min(320/img.naturalWidth, 240/img.naturalHeight);
-        tc.drawImage(img, (320-img.naturalWidth*sc)/2, (240-img.naturalHeight*sc)/2, img.naturalWidth*sc, img.naturalHeight*sc);
-        var labels = {parallax:'🌊 Parallax',zoom:'🔍 Zoom',rotate:'🌀 Rotacao',brush:'🖌️ Pinceladas',sparkle:'✨ Brilho',wave:'🎭 Ondulacao'};
-        var entry = { id: Date.now().toString(), name: state.currentImage||'Obra sem titulo', effect: state.selectedEffect,
-          effectLabel: labels[state.selectedEffect], date: new Date().toLocaleDateString('pt-BR'),
-          videoUrl: videoUrl, thumbnail: thumbCanvas.toDataURL('image/jpeg',0.7) };
-        state.gallery.unshift(entry); saveGallery(); renderGallery();
-        setTimeout(function() { el.progressContainer.classList.add('hidden'); el.generateBtn.disabled = false; state.isGenerating = false; }, 2000);
+        var thumbCanvas = document.createElement('canvas');
+        thumbCanvas.width = 320; thumbCanvas.height = 240;
+        var tc = thumbCanvas.getContext('2d');
+        tc.fillStyle = '#FAF7F0'; tc.fillRect(0, 0, 320, 240);
+        var sc = Math.min(320 / img.naturalWidth, 240 / img.naturalHeight);
+        tc.drawImage(img, (320 - img.naturalWidth * sc) / 2, (240 - img.naturalHeight * sc) / 2, img.naturalWidth * sc, img.naturalHeight * sc);
+        var labels = { parallax: '🌊 Parallax', zoom: '🔍 Zoom', rotate: '🌀 Rotacao', brush: '🖌️ Pinceladas', sparkle: '✨ Brilho', wave: '🎭 Ondulacao' };
+        var entry = {
+          id: Date.now().toString(),
+          name: state.currentImage || 'Obra sem titulo',
+          effect: state.selectedEffect,
+          effectLabel: labels[state.selectedEffect],
+          date: new Date().toLocaleDateString('pt-BR'),
+          videoUrl: videoUrl,
+          thumbnail: thumbCanvas.toDataURL('image/jpeg', 0.7)
+        };
+        state.gallery.unshift(entry);
+        saveGallery();
+        renderGallery();
+        setTimeout(function() {
+          el.progressContainer.classList.add('hidden');
+          el.generateBtn.disabled = false;
+          state.isGenerating = false;
+        }, 2000);
       };
-      recorder.start(); updateProgress(15, 'Renderizando frames...');
+      recorder.start();
+      updateProgress(15, 'Renderizando frames...');
       var duration = 5, fps = 30, totalFrames = duration * fps, frame = 0;
       function renderFrame() {
-        if(frame >= totalFrames) { recorder.stop(); updateProgress(92, 'Finalizando video...'); return; }
-        var t = frame / fps; ctx.clearRect(0,0,canvas.width,canvas.height);
-        ctx.fillStyle = '#FAF7F0'; ctx.fillRect(0,0,canvas.width,canvas.height);
+        if (frame >= totalFrames) { recorder.stop(); updateProgress(92, 'Finalizando video...'); return; }
+        var t = frame / fps;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#FAF7F0'; ctx.fillRect(0, 0, canvas.width, canvas.height);
         applyEffect(ctx, img, canvas, t, state.selectedEffect);
-        frame++; updateProgress(15+(frame/totalFrames)*75, 'Renderizando frame '+frame+'/'+totalFrames+'...');
+        frame++;
+        updateProgress(15 + (frame / totalFrames) * 75, 'Renderizando frame ' + frame + '/' + totalFrames + '...');
         requestAnimationFrame(renderFrame);
       }
       renderFrame();
     };
   }
 
-  function updateProgress(pct, txt) { el.progressFill.style.width = pct+'%'; el.progressText.textContent = txt; }
+  function updateProgress(pct, txt) {
+    el.progressFill.style.width = pct + '%';
+    el.progressText.textContent = txt;
+  }
 
   function renderGallery() {
     el.galleryCount.textContent = state.gallery.length;
-    if(state.gallery.length === 0) { el.galleryEmpty.classList.remove('hidden'); el.galleryGrid.innerHTML = ''; return; }
+    if (state.gallery.length === 0) { el.galleryEmpty.classList.remove('hidden'); el.galleryGrid.innerHTML = ''; return; }
     el.galleryEmpty.classList.add('hidden');
-    el.galleryGrid.innerHTML = state.gallery.map(function(item) { return '<div class="gallery-item" data-id="'+item.id+'"><div class="gallery-item-thumb-container"><img class="gallery-item-thumb" src="'+item.thumbnail+'" alt="'+item.name+'"><div class="gallery-item-play">▶</div></div><div class="gallery-item-info"><div class="gallery-item-name">'+item.name+'</div><div class="gallery-item-meta"><span class="gallery-item-effect">'+item.effectLabel+'</span><span>'+item.date+'</span></div></div></div>'; }).join('');
-    document.querySelectorAll('.gallery-item').forEach(function(item) { item.addEventListener('click', function() {
-      var entry = state.gallery.find(function(g) { return g.id === item.dataset.id; });
-      if(entry && entry.videoUrl) playVideo(entry); else alert('Video disponivel apenas na sessao atual. Gere novamente!');
-    }); });
+    el.galleryGrid.innerHTML = state.gallery.map(function(item) {
+      return '<div class="gallery-item" data-id="' + item.id + '">' +
+        '<div class="gallery-item-thumb-container"><img class="gallery-item-thumb" src="' + item.thumbnail + '" alt="' + item.name + '"><div class="gallery-item-play">▶</div></div>' +
+        '<div class="gallery-item-info"><div class="gallery-item-name">' + item.name + '</div>' +
+        '<div class="gallery-item-meta"><span class="gallery-item-effect">' + item.effectLabel + '</span><span>' + item.date + '</span></div></div></div>';
+    }).join('');
+    document.querySelectorAll('.gallery-item').forEach(function(item) {
+      item.addEventListener('click', function() {
+        var entry = state.gallery.find(function(g) { return g.id === item.dataset.id; });
+        if (entry && entry.videoUrl) playVideo(entry);
+        else alert('Video disponivel apenas na sessao atual. Gere novamente!');
+      });
+    });
   }
 
   function playVideo(entry) {
-    var modal = document.createElement('div'); modal.className = 'video-modal active';
-    modal.innerHTML = '<div class="video-modal-content"><button class="modal-close">&times;</button><video controls autoplay loop><source src="'+entry.videoUrl+'" type="video/webm"></video><button class="modal-download">⬇️ Baixar Video</button></div>';
+    var modal = document.createElement('div');
+    modal.className = 'video-modal active';
+    modal.innerHTML = '<div class="video-modal-content"><button class="modal-close">&times;</button>' +
+      '<video controls autoplay loop><source src="' + entry.videoUrl + '" type="video/webm"></video>' +
+      '<button class="modal-download">⬇️ Baixar Video</button></div>';
     document.body.appendChild(modal);
-    modal.querySelector('.modal-close').addEventListener('click', function() { modal.classList.remove('active'); setTimeout(function(){modal.remove();},300); });
-    modal.addEventListener('click', function(e) { if(e.target===modal){modal.classList.remove('active'); setTimeout(function(){modal.remove();},300);} });
+    modal.querySelector('.modal-close').addEventListener('click', function() {
+      modal.classList.remove('active');
+      setTimeout(function() { modal.remove(); }, 300);
+    });
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal) { modal.classList.remove('active'); setTimeout(function() { modal.remove(); }, 300); }
+    });
     modal.querySelector('.modal-download').addEventListener('click', function() {
-      var a = document.createElement('a'); a.href = entry.videoUrl;
-      a.download = 'islanda-animada-'+entry.name.replace(/[^a-z0-9]/gi,'-')+'.webm';
+      var a = document.createElement('a');
+      a.href = entry.videoUrl;
+      a.download = 'islanda-animada-' + entry.name.replace(/[^a-z0-9]/gi, '-') + '.webm';
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
     });
   }
 
-  function saveGallery() { try { var meta = state.gallery.map(function(i){return {id:i.id,name:i.name,effect:i.effect,effectLabel:i.effectLabel,date:i.date,thumbnail:i.thumbnail};}); localStorage.setItem('islanda-gallery',JSON.stringify(meta)); } catch(e){} }
-  function loadGallery() { try { var s = localStorage.getItem('islanda-gallery'); if(s) state.gallery = JSON.parse(s).map(function(i){ i.videoUrl=null; return i; }); } catch(e){ state.gallery=[]; } }
+  function saveGallery() {
+    try {
+      var meta = state.gallery.map(function(i) {
+        return { id: i.id, name: i.name, effect: i.effect, effectLabel: i.effectLabel, date: i.date, thumbnail: i.thumbnail };
+      });
+      localStorage.setItem('islanda-gallery', JSON.stringify(meta));
+    } catch(e) {}
+  }
 
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
+  function loadGallery() {
+    try {
+      var s = localStorage.getItem('islanda-gallery');
+      if (s) { state.gallery = JSON.parse(s).map(function(i) { i.videoUrl = null; return i; }); }
+    } catch(e) { state.gallery = []; }
+  }
+
+  // Initialize when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 })();
 </script>
 </body>
