@@ -5,501 +5,625 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Islanda Animada</title>
 <style>
+:root{--primary:#8B5CF6;--primary-dark:#6D28D9;--accent:#F59E0B;--bg:#1F1B2E;--bg-light:#2D2640;--frame-light:#D4A945;--frame-mid:#8B6914;--frame-dark:#5C4610;--canvas-bg:#FAF7F0;--text:#F3F0FF;--text-muted:#A78BFA;--pink:#EC4899;--cyan:#06B6D4;--radius:12px}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Georgia',serif;background:linear-gradient(135deg,#1a0a2e 0%,#2d1b4e 50%,#1a0a2e 100%);min-height:100vh;color:#e8d5f5;overflow-x:hidden}
-header{text-align:center;padding:30px 20px 10px}
-header h1{font-size:2.5em;background:linear-gradient(45deg,#f5a6e6,#a855f7,#f5a6e6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:2px}
-header p{font-style:italic;color:#c4a6d9;margin-top:5px;font-size:1.1em}
-.counter{text-align:center;margin:5px 0;font-size:0.9em;color:#a78bba}
-.easel{display:flex;justify-content:center;padding:20px;perspective:1000px}
-.canvas-frame{position:relative;width:520px;height:520px;background:#2a1a3a;border:12px solid #4a2c6a;border-radius:8px;box-shadow:0 0 40px rgba(168,85,247,0.3),inset 0 0 30px rgba(0,0,0,0.5);overflow:hidden}
-.canvas-frame::before{content:'';position:absolute;top:-20px;left:50%;transform:translateX(-50%);width:60px;height:20px;background:#4a2c6a;border-radius:4px 4px 0 0;z-index:2}
-.upload-zone{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:3px dashed #7c3aed;border-radius:4px;transition:all 0.3s}
-.upload-zone:hover{border-color:#a855f7;background:rgba(168,85,247,0.1)}
-.upload-zone.dragover{border-color:#f5a6e6;background:rgba(245,166,230,0.1)}
-.upload-zone .icon{font-size:4em;margin-bottom:10px}
-.upload-zone p{font-size:1.1em;color:#c4a6d9}
-.upload-zone small{color:#8b6aad;margin-top:8px}
-#previewContainer{display:none;width:100%;height:100%;position:relative}
-#previewImg{width:100%;height:100%;object-fit:contain;display:block}
-#effectCanvas{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
-#videoPreview{width:100%;height:100%;object-fit:contain;display:none;position:absolute;top:0;left:0}
-.controls{text-align:center;padding:20px}
-.btn-group{display:flex;gap:15px;justify-content:center;flex-wrap:wrap}
-.btn{padding:14px 28px;border:none;border-radius:30px;font-size:1.1em;font-family:inherit;cursor:pointer;transition:all 0.3s;font-weight:bold}
-.btn-vida{background:linear-gradient(45deg,#7c3aed,#a855f7);color:#fff;box-shadow:0 4px 15px rgba(168,85,247,0.4)}
-.btn-vida:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(168,85,247,0.6)}
-.btn-vida:disabled{opacity:0.5;cursor:not-allowed;transform:none}
-.btn-efeitos{background:linear-gradient(45deg,#6d28d9,#9333ea);color:#fff;box-shadow:0 4px 15px rgba(147,51,234,0.4)}
-.btn-efeitos:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(147,51,234,0.6)}
-.effects-panel{display:none;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:15px;padding:10px;animation:fadeIn 0.3s}
-.effects-panel.visible{display:flex}
-.btn-effect{padding:10px 20px;border:2px solid #7c3aed;border-radius:20px;background:transparent;color:#e8d5f5;font-family:inherit;cursor:pointer;transition:all 0.3s}
-.btn-effect:hover,.btn-effect.active{background:#7c3aed;color:#fff;transform:scale(1.05)}
-.status{text-align:center;padding:10px;color:#c4a6d9;font-style:italic;min-height:30px}
-.gallery{padding:20px 40px}
-.gallery h2{text-align:center;margin-bottom:15px;color:#c4a6d9;font-size:1.3em}
-.gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:15px}
-.gallery-item{position:relative;border-radius:8px;overflow:hidden;border:3px solid #4a2c6a;aspect-ratio:1;background:#1a0a2e}
-.gallery-item img,.gallery-item video{width:100%;height:100%;object-fit:cover}
-.gallery-item .delete-btn{position:absolute;top:5px;right:5px;width:28px;height:28px;border-radius:50%;background:rgba(220,38,38,0.8);color:#fff;border:none;cursor:pointer;font-size:1em;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.3s}
-.gallery-item:hover .delete-btn{opacity:1}
-footer{text-align:center;padding:30px;color:#8b6aad;font-size:1em}
-@keyframes fadeIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
-.loading-spinner{display:inline-block;width:20px;height:20px;border:3px solid rgba(255,255,255,0.3);border-radius:50%;border-top-color:#fff;animation:spin 1s linear infinite;margin-right:8px;vertical-align:middle}
-@keyframes spin{to{transform:rotate(360deg)}}
-#fileInput{display:none}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+.hidden{display:none!important}
+.bg-effects{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse at 20% 20%,rgba(139,92,246,.15) 0%,transparent 50%),radial-gradient(ellipse at 80% 80%,rgba(236,72,153,.1) 0%,transparent 50%),radial-gradient(ellipse at 50% 50%,rgba(245,158,11,.05) 0%,transparent 60%)}
+.container{position:relative;z-index:1;max-width:800px;margin:0 auto;padding:30px 20px}
+.header{text-align:center;margin-bottom:30px}
+.header h1{font-size:2.8rem;font-weight:800;background:linear-gradient(135deg,var(--primary),var(--pink),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px;letter-spacing:-.5px}
+.header .subtitle{font-size:1.1rem;color:var(--text-muted);font-style:italic;opacity:.9}
+.easel-wrapper{display:flex;flex-direction:column;align-items:center;margin-bottom:30px}
+.easel-top-bar{width:120px;height:12px;background:linear-gradient(to bottom,#8B6914,#5C4610);border-radius:4px 4px 0 0;box-shadow:0 -2px 4px rgba(0,0,0,.3)}
+.golden-frame{width:100%;max-width:560px;border:16px solid;border-image:linear-gradient(145deg,var(--frame-light),var(--frame-mid),var(--frame-dark),var(--frame-mid),var(--frame-light)) 1;box-shadow:0 0 30px rgba(212,169,69,.3),inset 0 0 20px rgba(0,0,0,.1),0 8px 32px rgba(0,0,0,.4);background:var(--canvas-bg);position:relative}
+.canvas-area{width:100%;min-height:380px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.upload-zone{display:flex;flex-direction:column;align-items:center;justify-content:center;width:calc(100% - 40px);height:340px;cursor:pointer;transition:all .3s ease;border:3px dashed rgba(139,92,246,.3);margin:20px;border-radius:8px}
+.upload-zone:hover{border-color:var(--primary);background:rgba(139,92,246,.05)}
+.upload-zone.drag-over{border-color:var(--accent);background:rgba(245,158,11,.08);transform:scale(1.01)}
+.upload-icon{font-size:4rem;margin-bottom:15px;opacity:.7}
+.upload-text{color:#6B5B8A;font-size:1rem;text-align:center}
+.upload-text strong{color:var(--primary)}
+.image-preview{width:100%;height:100%;min-height:380px;object-fit:contain;display:block;background:var(--canvas-bg)}
+.effect-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:5}
+.easel-legs{display:flex;justify-content:center}
+.leg{width:8px;height:60px;background:linear-gradient(to bottom,#5C4610,#3D2E0A);border-radius:0 0 3px 3px}
+.leg-left{transform:rotate(-8deg);margin-right:80px}
+.leg-right{transform:rotate(8deg)}
+.controls{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;align-items:center;margin-bottom:20px}
+.btn{padding:14px 28px;border:none;border-radius:50px;font-size:1rem;font-weight:700;cursor:pointer;transition:all .3s ease;position:relative;overflow:hidden;color:#fff;letter-spacing:.3px}
+.btn:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(0,0,0,.3)}
+.btn:active{transform:translateY(0)}
+.btn-primary{background:linear-gradient(135deg,var(--pink),var(--primary))}
+.btn-primary::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);transform:translateX(-100%);animation:shimmer 3s infinite}
+@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+.btn-secondary{background:linear-gradient(135deg,var(--cyan),var(--primary))}
+.btn-stop{background:linear-gradient(135deg,#EF4444,#DC2626);padding:14px 20px}
+.counter-pill{background:rgba(139,92,246,.2);border:1px solid rgba(139,92,246,.3);padding:8px 16px;border-radius:50px;font-size:.85rem;color:var(--text-muted)}
+.progress-container{width:100%;max-width:560px;margin:15px auto;text-align:center}
+.progress-bar-wrapper{width:100%;height:6px;background:rgba(139,92,246,.2);border-radius:3px;overflow:hidden;margin-top:8px}
+.progress-bar{height:100%;background:linear-gradient(90deg,var(--primary),var(--pink),var(--accent));border-radius:3px;width:0%;transition:width .5s ease;animation:progressPulse 1.5s ease-in-out infinite}
+@keyframes progressPulse{0%,100%{opacity:1}50%{opacity:.7}}
+.progress-text{font-size:.85rem;color:var(--text-muted)}
+.effects-panel{background:var(--bg-light);border:1px solid rgba(139,92,246,.2);border-radius:var(--radius);padding:20px;margin:20px auto;max-width:560px}
+.effects-panel h3{text-align:center;margin-bottom:15px;color:var(--text-muted);font-size:.9rem;text-transform:uppercase;letter-spacing:1px}
+.effects-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.effect-btn{padding:12px 10px;border:1px solid rgba(139,92,246,.3);border-radius:10px;background:rgba(139,92,246,.1);color:var(--text);cursor:pointer;transition:all .3s ease;font-size:.85rem;text-align:center;font-weight:600}
+.effect-btn:hover{background:rgba(139,92,246,.25);border-color:var(--primary);transform:translateY(-2px)}
+.effect-btn.active{background:linear-gradient(135deg,var(--primary),var(--pink));border-color:transparent;box-shadow:0 4px 15px rgba(139,92,246,.4)}
+.gallery-section{margin-top:40px;border-top:1px solid rgba(139,92,246,.1)}
+.gallery-tab{display:flex;justify-content:center;margin-top:-1px}
+.gallery-toggle{background:var(--bg-light);border:1px solid rgba(139,92,246,.2);border-top:none;padding:10px 30px;border-radius:0 0 12px 12px;color:var(--text-muted);cursor:pointer;font-size:.9rem;font-weight:600;transition:all .3s ease}
+.gallery-toggle:hover{background:rgba(139,92,246,.15);color:var(--text)}
+.gallery-content{padding:20px 0}
+.gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.gallery-item{position:relative;border-radius:8px;overflow:hidden;aspect-ratio:1;background:var(--bg-light);cursor:pointer;transition:transform .3s ease;border:1px solid rgba(139,92,246,.2)}
+.gallery-item:hover{transform:scale(1.03)}
+.gallery-item video{width:100%;height:100%;object-fit:cover}
+.gallery-delete{position:absolute;top:5px;right:5px;width:24px;height:24px;background:rgba(239,68,68,.9);border:none;border-radius:50%;color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .3s ease;z-index:10}
+.gallery-item:hover .gallery-delete{opacity:1}
+.gallery-empty{text-align:center;padding:30px;color:var(--text-muted);font-style:italic;opacity:.7}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal-content{max-width:90vw;max-height:90vh;border-radius:12px;overflow:hidden;position:relative}
+.modal-content video{max-width:100%;max-height:85vh;display:block}
+.modal-close{position:absolute;top:10px;right:10px;width:36px;height:36px;background:rgba(0,0,0,.7);border:none;border-radius:50%;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.footer{text-align:center;margin-top:40px;padding:20px;color:var(--text-muted);font-size:.9rem;opacity:.7}
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--bg-light);border:1px solid rgba(139,92,246,.3);padding:14px 24px;border-radius:50px;color:var(--text);font-size:.9rem;z-index:2000;transition:transform .4s ease;box-shadow:0 8px 30px rgba(0,0,0,.4)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.error{border-color:rgba(239,68,68,.5)}
+@media(max-width:600px){.header h1{font-size:2rem}.golden-frame{border-width:10px}.canvas-area{min-height:280px}.upload-zone{height:240px}.image-preview{min-height:280px}.btn{padding:12px 20px;font-size:.9rem}.effects-grid{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
-<header>
-<h1>Islanda Animada</h1>
-<p>Dando vida as suas pinturas</p>
-</header>
-<div class="counter" id="counter"></div>
-<div class="easel">
-<div class="canvas-frame" id="canvasFrame">
-<div class="upload-zone" id="uploadZone">
-<div class="icon">🎨</div>
-<p>Arraste sua pintura aqui</p>
-<small>ou clique para selecionar</small>
+<div class="bg-effects"></div>
+<div class="container">
+    <header class="header">
+        <h1>&#x1F3A8; Islanda Animada &#x2728;</h1>
+        <p class="subtitle">Dando vida as suas obras de arte</p>
+    </header>
+
+    <div class="easel-wrapper">
+        <div class="easel-top-bar"></div>
+        <div class="golden-frame">
+            <div class="canvas-area" id="canvasArea">
+                <div class="upload-zone" id="uploadZone">
+                    <div class="upload-icon">&#x1F5BC;&#xFE0F;</div>
+                    <p class="upload-text"><strong>Clique ou arraste</strong> sua obra de arte aqui</p>
+                </div>
+                <img class="image-preview hidden" id="imagePreview" alt="Preview">
+                <canvas class="effect-canvas hidden" id="effectCanvas"></canvas>
+            </div>
+        </div>
+        <div class="easel-legs">
+            <div class="leg leg-left"></div>
+            <div class="leg leg-right"></div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-primary" id="btnAnimate">&#x1F31F; Dar Vida</button>
+        <button class="btn btn-secondary" id="btnEffects">&#x1F3AD; Efeitos</button>
+        <button class="btn btn-stop hidden" id="btnStop">&#x23F9; Parar</button>
+        <span class="counter-pill" id="counterPill">&#x2728; Animacoes criadas: 0</span>
+    </div>
+
+    <div class="progress-container hidden" id="progressContainer">
+        <p class="progress-text" id="progressText">Gerando animacao...</p>
+        <div class="progress-bar-wrapper"><div class="progress-bar" id="progressBar"></div></div>
+    </div>
+
+    <div class="effects-panel hidden" id="effectsPanel">
+        <h3>Escolha um Efeito</h3>
+        <div class="effects-grid">
+            <button class="effect-btn" data-effect="parallax">&#x1F30C; Parallax 2.5D</button>
+            <button class="effect-btn" data-effect="waves">&#x1F30A; Ondas Magicas</button>
+            <button class="effect-btn" data-effect="breathe">&#x1F4AB; Respirar</button>
+            <button class="effect-btn" data-effect="cinematic">&#x1F3AC; Cinematic</button>
+            <button class="effect-btn" data-effect="portal">&#x1FA84; Portal Magico</button>
+        </div>
+    </div>
+
+    <div class="gallery-section">
+        <div class="gallery-tab">
+            <button class="gallery-toggle" id="galleryToggle">&#x1F4F7; Galeria (0)</button>
+        </div>
+        <div class="gallery-content hidden" id="galleryContent">
+            <div class="gallery-grid" id="galleryGrid"></div>
+            <p class="gallery-empty" id="galleryEmpty">Nenhuma animacao ainda. Crie a primeira!</p>
+        </div>
+    </div>
+
+    <footer class="footer">Feito com &#x1F49C; para Islanda</footer>
 </div>
-<div id="previewContainer">
-<img id="previewImg" alt="Preview">
-<canvas id="effectCanvas"></canvas>
-<video id="videoPreview" loop muted></video>
+
+<div class="modal-overlay hidden" id="modalOverlay">
+    <div class="modal-content">
+        <video id="modalVideo" controls></video>
+        <button class="modal-close" id="modalClose">&#x2715;</button>
+    </div>
 </div>
-<input type="file" id="fileInput" accept="image/*">
-</div>
-</div>
-<div class="controls">
-<div class="btn-group">
-<button class="btn btn-vida" id="btnVida" disabled>🌟 Dar Vida</button>
-<button class="btn btn-efeitos" id="btnEfeitos" disabled>🎭 Efeitos</button>
-</div>
-<div class="effects-panel" id="effectsPanel">
-<button class="btn-effect" data-effect="parallax">🔮 Parallax 2.5D</button>
-<button class="btn-effect" data-effect="ondas">🌊 Ondas</button>
-<button class="btn-effect" data-effect="flutuante">🎈 Flutuante</button>
-<button class="btn-effect" data-effect="cinematic">🎬 Cinematic</button>
-</div>
-</div>
-<div class="status" id="status"></div>
-<div class="gallery">
-<h2>Galeria</h2>
-<div class="gallery-grid" id="galleryGrid"></div>
-</div>
-<footer>Feito com 💜 para Islanda</footer>
+
+<div class="toast" id="toast"></div>
+
+<input type="file" id="fileInput" accept="image/*" style="display:none">
+
 <script>
 (function(){
 'use strict';
-document.addEventListener('DOMContentLoaded', function(){
+const API_KEY='sk-qUAe4fe572yDOKXx4Ir0SHdoZUrnhF0ebaEBUmJzNXCFDXK0';
+const API_URL='https://api.stability.ai/v2beta/image-to-video';
 
-const API_KEY = 'sk-qUAe4fe572yDOKXx4Ir0SHdoZUrnhF0ebaEBUmJzNXCFDXK0';
-const API_URL = 'https://api.stability.ai/v2beta/image-to-video';
+const uploadZone=document.getElementById('uploadZone');
+const imagePreview=document.getElementById('imagePreview');
+const effectCanvas=document.getElementById('effectCanvas');
+const canvasArea=document.getElementById('canvasArea');
+const fileInput=document.getElementById('fileInput');
+const btnAnimate=document.getElementById('btnAnimate');
+const btnEffects=document.getElementById('btnEffects');
+const btnStop=document.getElementById('btnStop');
+const counterPill=document.getElementById('counterPill');
+const progressContainer=document.getElementById('progressContainer');
+const progressText=document.getElementById('progressText');
+const progressBar=document.getElementById('progressBar');
+const effectsPanel=document.getElementById('effectsPanel');
+const galleryToggle=document.getElementById('galleryToggle');
+const galleryContent=document.getElementById('galleryContent');
+const galleryGrid=document.getElementById('galleryGrid');
+const galleryEmpty=document.getElementById('galleryEmpty');
+const modalOverlay=document.getElementById('modalOverlay');
+const modalVideo=document.getElementById('modalVideo');
+const modalClose=document.getElementById('modalClose');
+const toast=document.getElementById('toast');
 
-const uploadZone = document.getElementById('uploadZone');
-const fileInput = document.getElementById('fileInput');
-const previewContainer = document.getElementById('previewContainer');
-const previewImg = document.getElementById('previewImg');
-const effectCanvas = document.getElementById('effectCanvas');
-const videoPreview = document.getElementById('videoPreview');
-const btnVida = document.getElementById('btnVida');
-const btnEfeitos = document.getElementById('btnEfeitos');
-const effectsPanel = document.getElementById('effectsPanel');
-const statusEl = document.getElementById('status');
-const galleryGrid = document.getElementById('galleryGrid');
-const counterEl = document.getElementById('counter');
-const canvasFrame = document.getElementById('canvasFrame');
+let uploadedImage=null;
+let currentEffect=null;
+let animFrameId=null;
+let audioCtx=null;
+let audioNodes=[];
+let particles=[];
+let galleryItems=JSON.parse(localStorage.getItem('islanda_gallery')||'[]');
+let animCount=parseInt(localStorage.getItem('islanda_count')||'0');
 
-let currentFile = null;
-let currentEffect = null;
-let animFrameId = null;
-let audioCtx = null;
-let particles = [];
-let usageCount = parseInt(localStorage.getItem('islanda_usage') || '0');
-let gallery = JSON.parse(localStorage.getItem('islanda_gallery') || '[]');
-
-function updateCounter(){
-  counterEl.textContent = '🌟 Dar Vida usado: ' + usageCount + ' vez' + (usageCount !== 1 ? 'es' : '');
-}
 updateCounter();
+renderGallery();
 
-function setStatus(msg){statusEl.innerHTML = msg;}
+// Toast
+function showToast(msg,isError){
+    toast.textContent=msg;
+    toast.classList.toggle('error',!!isError);
+    toast.classList.add('show');
+    setTimeout(()=>toast.classList.remove('show'),3500);
+}
 
-// --- Upload ---
-uploadZone.addEventListener('click', function(e){
-  e.stopPropagation();
-  fileInput.click();
+// Counter
+function updateCounter(){
+    counterPill.textContent='\u2728 Animacoes criadas: '+animCount;
+    galleryToggle.textContent='\uD83D\uDCF7 Galeria ('+galleryItems.length+')';
+}
+
+function incrementCounter(){
+    animCount++;
+    localStorage.setItem('islanda_count',animCount);
+    updateCounter();
+}
+
+// Upload
+uploadZone.addEventListener('click',function(e){
+    e.stopPropagation();
+    fileInput.click();
 });
 
-fileInput.addEventListener('click', function(e){
-  e.stopPropagation();
+uploadZone.addEventListener('dragover',function(e){
+    e.preventDefault();e.stopPropagation();
+    uploadZone.classList.add('drag-over');
+});
+uploadZone.addEventListener('dragleave',function(e){
+    e.preventDefault();e.stopPropagation();
+    uploadZone.classList.remove('drag-over');
+});
+uploadZone.addEventListener('drop',function(e){
+    e.preventDefault();e.stopPropagation();
+    uploadZone.classList.remove('drag-over');
+    var files=e.dataTransfer.files;
+    if(files.length>0)handleFile(files[0]);
 });
 
-fileInput.addEventListener('change', function(e){
-  e.stopPropagation();
-  if(fileInput.files && fileInput.files[0]){
-    handleFile(fileInput.files[0]);
-  }
-});
-
-uploadZone.addEventListener('dragover', function(e){
-  e.preventDefault();
-  e.stopPropagation();
-  uploadZone.classList.add('dragover');
-});
-
-uploadZone.addEventListener('dragleave', function(e){
-  e.preventDefault();
-  e.stopPropagation();
-  uploadZone.classList.remove('dragover');
-});
-
-uploadZone.addEventListener('drop', function(e){
-  e.preventDefault();
-  e.stopPropagation();
-  uploadZone.classList.remove('dragover');
-  if(e.dataTransfer.files && e.dataTransfer.files[0]){
-    handleFile(e.dataTransfer.files[0]);
-  }
+fileInput.addEventListener('change',function(){
+    if(fileInput.files.length>0)handleFile(fileInput.files[0]);
 });
 
 function handleFile(file){
-  if(!file.type.startsWith('image/')) return;
-  currentFile = file;
-  const reader = new FileReader();
-  reader.onload = function(ev){
-    previewImg.src = ev.target.result;
-    uploadZone.style.display = 'none';
-    previewContainer.style.display = 'block';
-    videoPreview.style.display = 'none';
-    btnVida.disabled = false;
-    btnEfeitos.disabled = false;
-    stopEffect();
-    setStatus('Imagem carregada! Escolha uma opcao.');
-  };
-  reader.readAsDataURL(file);
-}
-
-// --- Resize to 768x768 ---
-function resizeTo768(file){
-  return new Promise(function(resolve){
-    var img = new Image();
-    img.onload = function(){
-      var c = document.createElement('canvas');
-      c.width = 768; c.height = 768;
-      var ctx = c.getContext('2d');
-      ctx.drawImage(img, 0, 0, 768, 768);
-      c.toBlob(function(blob){resolve(blob);}, 'image/png');
+    if(!file.type.startsWith('image/')){showToast('Por favor, envie uma imagem!',true);return;}
+    var reader=new FileReader();
+    reader.onload=function(ev){
+        uploadedImage=new Image();
+        uploadedImage.onload=function(){
+            imagePreview.src=ev.target.result;
+            imagePreview.classList.remove('hidden');
+            uploadZone.classList.add('hidden');
+            stopEffect();
+        };
+        uploadedImage.src=ev.target.result;
     };
-    img.src = URL.createObjectURL(file);
-  });
+    reader.readAsDataURL(file);
 }
 
-// --- Dar Vida (API) ---
-btnVida.addEventListener('click', async function(){
-  if(!currentFile) return;
-  btnVida.disabled = true;
-  setStatus('<span class="loading-spinner"></span> Gerando animacao... pode levar ate 2 minutos.');
+// Resize to 768x768
+function resizeImage(img){
+    var c=document.createElement('canvas');
+    c.width=768;c.height=768;
+    var ctx=c.getContext('2d');
+    var scale=Math.max(768/img.width,768/img.height);
+    var w=img.width*scale,h=img.height*scale;
+    var x=(768-w)/2,y=(768-h)/2;
+    ctx.drawImage(img,x,y,w,h);
+    return new Promise(function(res){c.toBlob(function(b){res(b);},'image/png');});
+}
 
-  try{
-    var resized = await resizeTo768(currentFile);
-    var formData = new FormData();
-    formData.append('image', resized, 'image.png');
-    formData.append('seed', '0');
-    formData.append('cfg_scale', '2.5');
-    formData.append('motion_bucket_id', '127');
-
-    var resp = await fetch(API_URL, {
-      method: 'POST',
-      headers: {'authorization': 'Bearer ' + API_KEY},
-      body: formData
-    });
-
-    if(!resp.ok){
-      var err = await resp.text();
-      throw new Error('API error: ' + resp.status + ' ' + err);
+// Animate (Stability AI)
+btnAnimate.addEventListener('click',async function(){
+    if(!uploadedImage){showToast('Envie uma imagem primeiro!',true);return;}
+    progressContainer.classList.remove('hidden');
+    progressBar.style.width='10%';
+    progressText.textContent='Preparando imagem...';
+    try{
+        var blob=await resizeImage(uploadedImage);
+        progressBar.style.width='20%';
+        progressText.textContent='Enviando para a IA...';
+        var fd=new FormData();
+        fd.append('image',blob,'image.png');
+        fd.append('seed','0');
+        fd.append('cfg_scale','1.8');
+        fd.append('motion_bucket_id','127');
+        var resp=await fetch(API_URL,{method:'POST',headers:{'Authorization':'Bearer '+API_KEY},body:fd});
+        if(!resp.ok){
+            var errData=await resp.json().catch(function(){return{};});
+            throw new Error(errData.message||'Erro '+resp.status);
+        }
+        var data=await resp.json();
+        var genId=data.id;
+        progressBar.style.width='40%';
+        progressText.textContent='Gerando animacao...';
+        await pollResult(genId);
+    }catch(err){
+        progressContainer.classList.add('hidden');
+        if(err.message&&err.message.indexOf('404')!==-1){
+            showToast('Servico temporariamente indisponivel, tente o Parallax!',true);
+        }else{
+            showToast('Erro: '+err.message,true);
+        }
     }
-
-    var data = await resp.json();
-    var genId = data.id;
-    setStatus('<span class="loading-spinner"></span> Processando video (ID: ' + genId + ')...');
-
-    // Poll for result
-    var videoBlob = await pollResult(genId);
-    var videoUrl = URL.createObjectURL(videoBlob);
-    videoPreview.src = videoUrl;
-    videoPreview.style.display = 'block';
-    videoPreview.play();
-    stopEffect();
-
-    usageCount++;
-    localStorage.setItem('islanda_usage', usageCount.toString());
-    updateCounter();
-
-    addToGallery(videoUrl, 'video');
-    setStatus('✨ Animacao criada com sucesso!');
-  } catch(e){
-    setStatus('❌ Erro: ' + e.message);
-  }
-  btnVida.disabled = false;
 });
 
 async function pollResult(id){
-  var url = API_URL + '/result/' + id;
-  while(true){
-    await new Promise(function(r){setTimeout(r, 3000);});
-    var resp = await fetch(url, {
-      headers: {
-        'authorization': 'Bearer ' + API_KEY,
-        'accept': 'video/*'
-      }
-    });
-    if(resp.status === 202){
-      continue;
-    }
-    if(resp.ok){
-      return await resp.blob();
-    }
-    var errText = await resp.text();
-    throw new Error('Poll error: ' + resp.status + ' ' + errText);
-  }
+    var progress=40;
+    var poll=async function(){
+        try{
+            var resp=await fetch(API_URL+'/result/'+id,{headers:{'Authorization':'Bearer '+API_KEY,'Accept':'video/*'}});
+            if(resp.status===202){
+                progress=Math.min(progress+5,90);
+                progressBar.style.width=progress+'%';
+                progressText.textContent='Processando... aguarde';
+                setTimeout(poll,3000);
+            }else if(resp.ok){
+                var videoBlob=await resp.blob();
+                progressBar.style.width='100%';
+                progressText.textContent='Concluido!';
+                setTimeout(function(){progressContainer.classList.add('hidden');},1000);
+                saveToGallery(videoBlob);
+                incrementCounter();
+                showToast('Animacao criada com sucesso! \uD83C\uDF89');
+            }else if(resp.status===404){
+                progressContainer.classList.add('hidden');
+                showToast('Servico temporariamente indisponivel, tente o Parallax!',true);
+            }else{
+                progressContainer.classList.add('hidden');
+                showToast('Erro ao gerar video. Tente novamente.',true);
+            }
+        }catch(err){
+            progressContainer.classList.add('hidden');
+            showToast('Erro de conexao: '+err.message,true);
+        }
+    };
+    poll();
 }
 
-// --- Effects ---
-btnEfeitos.addEventListener('click', function(){
-  effectsPanel.classList.toggle('visible');
+// Gallery
+function saveToGallery(blob){
+    var reader=new FileReader();
+    reader.onload=function(e){
+        galleryItems.unshift({data:e.target.result,date:Date.now()});
+        if(galleryItems.length>20)galleryItems.pop();
+        try{localStorage.setItem('islanda_gallery',JSON.stringify(galleryItems));}catch(ex){}
+        renderGallery();
+        updateCounter();
+    };
+    reader.readAsDataURL(blob);
+}
+
+function renderGallery(){
+    galleryGrid.innerHTML='';
+    if(galleryItems.length===0){galleryEmpty.classList.remove('hidden');return;}
+    galleryEmpty.classList.add('hidden');
+    galleryItems.forEach(function(item,idx){
+        var div=document.createElement('div');
+        div.className='gallery-item';
+        var vid=document.createElement('video');
+        vid.src=item.data;vid.muted=true;vid.loop=true;
+        vid.addEventListener('mouseenter',function(){vid.play();});
+        vid.addEventListener('mouseleave',function(){vid.pause();vid.currentTime=0;});
+        div.appendChild(vid);
+        var del=document.createElement('button');
+        del.className='gallery-delete';del.innerHTML='&#x2715;';
+        del.addEventListener('click',function(e){
+            e.stopPropagation();
+            galleryItems.splice(idx,1);
+            try{localStorage.setItem('islanda_gallery',JSON.stringify(galleryItems));}catch(ex){}
+            renderGallery();updateCounter();
+        });
+        div.appendChild(del);
+        div.addEventListener('click',function(){openModal(item.data);});
+        galleryGrid.appendChild(div);
+    });
+    updateCounter();
+}
+
+galleryToggle.addEventListener('click',function(){
+    galleryContent.classList.toggle('hidden');
 });
 
-var effectBtns = document.querySelectorAll('.btn-effect');
-effectBtns.forEach(function(btn){
-  btn.addEventListener('click', function(){
-    effectBtns.forEach(function(b){b.classList.remove('active');});
-    btn.classList.add('active');
-    startEffect(btn.getAttribute('data-effect'));
-  });
+function openModal(src){
+    modalVideo.src=src;
+    modalOverlay.classList.remove('hidden');
+    modalVideo.play();
+}
+modalClose.addEventListener('click',function(){
+    modalOverlay.classList.add('hidden');
+    modalVideo.pause();modalVideo.src='';
 });
+modalOverlay.addEventListener('click',function(e){
+    if(e.target===modalOverlay){modalOverlay.classList.add('hidden');modalVideo.pause();modalVideo.src='';}
+});
+
+// Effects
+btnEffects.addEventListener('click',function(){
+    if(!uploadedImage){showToast('Envie uma imagem primeiro!',true);return;}
+    effectsPanel.classList.toggle('hidden');
+});
+
+var effectBtns=document.querySelectorAll('.effect-btn');
+effectBtns.forEach(function(btn){
+    btn.addEventListener('click',function(){
+        effectBtns.forEach(function(b){b.classList.remove('active');});
+        btn.classList.add('active');
+        startEffect(btn.dataset.effect);
+    });
+});
+
+btnStop.addEventListener('click',stopEffect);
 
 function stopEffect(){
-  if(animFrameId){cancelAnimationFrame(animFrameId);animFrameId=null;}
-  currentEffect = null;
-  effectCanvas.style.display = 'none';
-  previewImg.style.transform = '';
-  previewImg.style.transition = '';
-  particles = [];
+    if(animFrameId){cancelAnimationFrame(animFrameId);animFrameId=null;}
+    effectCanvas.classList.add('hidden');
+    btnStop.classList.add('hidden');
+    currentEffect=null;
+    stopAudio();
+    effectBtns.forEach(function(b){b.classList.remove('active');});
 }
 
-function startEffect(type){
-  stopEffect();
-  currentEffect = type;
-  videoPreview.style.display = 'none';
-  effectCanvas.style.display = 'block';
-  var rect = previewContainer.getBoundingClientRect();
-  effectCanvas.width = rect.width;
-  effectCanvas.height = rect.height;
-  var ctx = effectCanvas.getContext('2d');
-  particles = createParticles(20);
-  initAmbientSound(type);
-
-  if(type === 'parallax') runParallax(ctx);
-  else if(type === 'ondas') runOndas(ctx);
-  else if(type === 'flutuante') runFlutuante(ctx);
-  else if(type === 'cinematic') runCinematic(ctx);
-}
-
-// --- Particles ---
-function createParticles(n){
-  var arr = [];
-  for(var i=0;i<n;i++){
-    arr.push({
-      x: Math.random()*effectCanvas.width,
-      y: Math.random()*effectCanvas.height,
-      size: Math.random()*4+1,
-      speedX: (Math.random()-0.5)*0.5,
-      speedY: -Math.random()*0.8-0.2,
-      opacity: Math.random()*0.7+0.3,
-      hue: Math.random()*60+270
+function startEffect(name){
+    stopEffect();
+    if(!uploadedImage)return;
+    currentEffect=name;
+    effectCanvas.classList.remove('hidden');
+    btnStop.classList.remove('hidden');
+    var rect=canvasArea.getBoundingClientRect();
+    effectCanvas.width=rect.width;
+    effectCanvas.height=rect.height;
+    var ctx=effectCanvas.getContext('2d');
+    particles=createParticles(18,effectCanvas.width,effectCanvas.height);
+    startAudio();
+    var startTime=performance.now();
+    var mouseX=0.5,mouseY=0.5;
+    canvasArea.addEventListener('mousemove',function(e){
+        var r=canvasArea.getBoundingClientRect();
+        mouseX=(e.clientX-r.left)/r.width;
+        mouseY=(e.clientY-r.top)/r.height;
     });
-  }
-  return arr;
-}
 
-function drawParticles(ctx){
-  particles.forEach(function(p){
-    p.x += p.speedX;
-    p.y += p.speedY;
-    if(p.y < -10){p.y = effectCanvas.height + 10; p.x = Math.random()*effectCanvas.width;}
-    if(p.x < -10) p.x = effectCanvas.width + 10;
-    if(p.x > effectCanvas.width + 10) p.x = -10;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
-    ctx.fillStyle = 'hsla('+p.hue+',80%,70%,'+p.opacity+')';
-    ctx.fill();
-  });
-}
+    function loop(ts){
+        var elapsed=(ts-startTime)/1000;
+        ctx.clearRect(0,0,effectCanvas.width,effectCanvas.height);
+        var cw=effectCanvas.width,ch=effectCanvas.height;
+        var imgRatio=uploadedImage.width/uploadedImage.height;
+        var canvasRatio=cw/ch;
+        var dw,dh,dx,dy;
+        if(imgRatio>canvasRatio){dh=ch;dw=ch*imgRatio;dx=(cw-dw)/2;dy=0;}
+        else{dw=cw;dh=cw/imgRatio;dx=0;dy=(ch-dh)/2;}
 
-// --- Parallax 2.5D ---
-var mouseX = 0.5, mouseY = 0.5;
-canvasFrame.addEventListener('mousemove', function(e){
-  var rect = canvasFrame.getBoundingClientRect();
-  mouseX = (e.clientX - rect.left) / rect.width;
-  mouseY = (e.clientY - rect.top) / rect.height;
-});
+        if(name==='parallax')drawParallax(ctx,cw,ch,dw,dh,dx,dy,elapsed,mouseX,mouseY);
+        else if(name==='waves')drawWaves(ctx,cw,ch,dw,dh,dx,dy,elapsed);
+        else if(name==='breathe')drawBreathe(ctx,cw,ch,dw,dh,dx,dy,elapsed);
+        else if(name==='cinematic')drawCinematic(ctx,cw,ch,dw,dh,dx,dy,elapsed);
+        else if(name==='portal')drawPortal(ctx,cw,ch,dw,dh,dx,dy,elapsed);
 
-function runParallax(ctx){
-  var img = new Image();
-  img.src = previewImg.src;
-  img.onload = function(){
-    var layers = [
-      {depth:0.02, scale:1.05},
-      {depth:0.04, scale:1.1},
-      {depth:0.06, scale:1.15}
-    ];
-    function animate(){
-      ctx.clearRect(0,0,effectCanvas.width,effectCanvas.height);
-      var cw = effectCanvas.width, ch = effectCanvas.height;
-      layers.forEach(function(layer){
-        var offX = (mouseX - 0.5) * cw * layer.depth;
-        var offY = (mouseY - 0.5) * ch * layer.depth;
-        var s = layer.scale;
-        var dw = cw * s, dh = ch * s;
-        var dx = (cw - dw)/2 + offX;
-        var dy = (ch - dh)/2 + offY;
-        ctx.globalAlpha = 0.35;
-        ctx.drawImage(img, dx, dy, dw, dh);
-      });
-      ctx.globalAlpha = 1;
-      drawParticles(ctx);
-      animFrameId = requestAnimationFrame(animate);
+        drawParticles(ctx,particles,elapsed,cw,ch);
+        animFrameId=requestAnimationFrame(loop);
     }
-    animate();
-  };
+    animFrameId=requestAnimationFrame(loop);
 }
 
-// --- Ondas ---
-function runOndas(ctx){
-  var img = new Image();
-  img.src = previewImg.src;
-  img.onload = function(){
-    var t = 0;
-    function animate(){
-      ctx.clearRect(0,0,effectCanvas.width,effectCanvas.height);
-      var cw = effectCanvas.width, ch = effectCanvas.height;
-      var sliceH = 4;
-      for(var y=0; y<ch; y+=sliceH){
-        var offset = Math.sin((y*0.02) + t*0.03) * 8;
-        ctx.drawImage(img, 0, y*(img.naturalHeight/ch), img.naturalWidth, sliceH*(img.naturalHeight/ch),
-          offset, y, cw, sliceH);
-      }
-      drawParticles(ctx);
-      t++;
-      animFrameId = requestAnimationFrame(animate);
-    }
-    animate();
-  };
-}
-
-// --- Flutuante ---
-function runFlutuante(ctx){
-  var t = 0;
-  function animate(){
-    ctx.clearRect(0,0,effectCanvas.width,effectCanvas.height);
-    var scale = 1 + Math.sin(t*0.015)*0.03;
-    var rot = Math.sin(t*0.01)*1.5;
-    previewImg.style.transform = 'scale('+scale+') rotate('+rot+'deg)';
-    previewImg.style.transition = 'transform 0.1s ease';
-    drawParticles(ctx);
-    t++;
-    animFrameId = requestAnimationFrame(animate);
-  }
-  animate();
-}
-
-// --- Cinematic (Ken Burns) ---
-function runCinematic(ctx){
-  var img = new Image();
-  img.src = previewImg.src;
-  img.onload = function(){
-    var t = 0;
-    var duration = 600;
-    function animate(){
-      ctx.clearRect(0,0,effectCanvas.width,effectCanvas.height);
-      var cw = effectCanvas.width, ch = effectCanvas.height;
-      var progress = (t % duration) / duration;
-      var scale = 1.0 + progress * 0.15;
-      var panX = progress * 20 - 10;
-      var panY = progress * 10 - 5;
-      var dw = cw * scale, dh = ch * scale;
-      var dx = (cw - dw)/2 + panX;
-      var dy = (ch - dh)/2 + panY;
-      ctx.drawImage(img, dx, dy, dw, dh);
-      drawParticles(ctx);
-      t++;
-      animFrameId = requestAnimationFrame(animate);
-    }
-    animate();
-  };
-}
-
-// --- Ambient Sound (Web Audio API) ---
-function initAmbientSound(type){
-  if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  var osc = audioCtx.createOscillator();
-  var gain = audioCtx.createGain();
-  gain.gain.value = 0.03;
-  osc.type = 'sine';
-  if(type === 'parallax') osc.frequency.value = 120;
-  else if(type === 'ondas') osc.frequency.value = 80;
-  else if(type === 'flutuante') osc.frequency.value = 150;
-  else if(type === 'cinematic') osc.frequency.value = 100;
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  osc.start();
-  // Fade out after 3 seconds
-  gain.gain.setTargetAtTime(0, audioCtx.currentTime + 2, 0.5);
-  setTimeout(function(){osc.stop();}, 4000);
-}
-
-// --- Gallery ---
-function renderGallery(){
-  galleryGrid.innerHTML = '';
-  gallery.forEach(function(item, idx){
-    var div = document.createElement('div');
-    div.className = 'gallery-item';
-    if(item.type === 'video'){
-      var vid = document.createElement('video');
-      vid.src = item.src;
-      vid.loop = true; vid.muted = true; vid.autoplay = true;
-      div.appendChild(vid);
-    } else {
-      var im = document.createElement('img');
-      im.src = item.src;
-      div.appendChild(im);
-    }
-    var delBtn = document.createElement('button');
-    delBtn.className = 'delete-btn';
-    delBtn.textContent = 'X';
-    delBtn.addEventListener('click', function(){
-      gallery.splice(idx, 1);
-      localStorage.setItem('islanda_gallery', JSON.stringify(gallery));
-      renderGallery();
+// Parallax 2.5D
+function drawParallax(ctx,cw,ch,dw,dh,dx,dy,t,mx,my){
+    var drift=Math.sin(t*0.3)*0.02;
+    var layers=[{scale:1.08,speed:0.04},{scale:1.04,speed:0.02},{scale:1.0,speed:0.005}];
+    layers.forEach(function(l){
+        var ox=((mx-0.5)*l.speed+drift)*cw;
+        var oy=((my-0.5)*l.speed)*ch;
+        var s=l.scale;
+        var w=dw*s,h=dh*s;
+        var x=dx-(w-dw)/2+ox;
+        var y=dy-(h-dh)/2+oy;
+        ctx.globalAlpha=1;
+        ctx.drawImage(uploadedImage,x,y,w,h);
     });
-    div.appendChild(delBtn);
-    galleryGrid.appendChild(div);
-  });
+    // Vignette
+    var grad=ctx.createRadialGradient(cw/2,ch/2,cw*0.3,cw/2,ch/2,cw*0.7);
+    grad.addColorStop(0,'rgba(0,0,0,0)');
+    grad.addColorStop(1,'rgba(0,0,0,0.4)');
+    ctx.fillStyle=grad;ctx.fillRect(0,0,cw,ch);
 }
 
-function addToGallery(src, type){
-  gallery.push({src: src, type: type});
-  // Only store data URLs in localStorage (blobs won't persist)
-  try{localStorage.setItem('islanda_gallery', JSON.stringify(gallery));}catch(e){}
-  renderGallery();
+// Ondas Magicas
+function drawWaves(ctx,cw,ch,dw,dh,dx,dy,t){
+    ctx.drawImage(uploadedImage,dx,dy,dw,dh);
+    var sliceH=4;
+    ctx.save();
+    for(var y=0;y<ch;y+=sliceH){
+        var amp=Math.sin(y*0.02+t*2)*4+Math.sin(y*0.01+t*1.5)*2;
+        ctx.drawImage(effectCanvas,0,y,cw,sliceH,amp,y,cw,sliceH);
+    }
+    ctx.restore();
+    // Color shift overlay
+    ctx.globalAlpha=0.08;
+    ctx.fillStyle='hsl('+(t*30%360)+',70%,50%)';
+    ctx.fillRect(0,0,cw,ch);
+    ctx.globalAlpha=1;
 }
 
-renderGallery();
+// Respirar
+function drawBreathe(ctx,cw,ch,dw,dh,dx,dy,t){
+    var scale=1+0.04*Math.sin(t*1.2);
+    var rot=Math.sin(t*0.8)*0.017;
+    ctx.save();
+    ctx.translate(cw/2,ch/2);
+    ctx.rotate(rot);
+    ctx.scale(scale,scale);
+    ctx.drawImage(uploadedImage,-dw/2,-dh/2,dw,dh);
+    ctx.restore();
+    // Glow overlay
+    var glowA=0.1+0.08*Math.sin(t*1.5);
+    var grad=ctx.createRadialGradient(cw/2,ch/2,cw*0.1,cw/2,ch/2,cw*0.6);
+    grad.addColorStop(0,'rgba(139,92,246,'+glowA+')');
+    grad.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=grad;ctx.fillRect(0,0,cw,ch);
+}
 
-});
+// Cinematic
+function drawCinematic(ctx,cw,ch,dw,dh,dx,dy,t){
+    var duration=12;
+    var prog=(t%duration)/duration;
+    var scale=1+0.2*prog;
+    var panX=(prog-0.5)*dw*0.15;
+    ctx.save();
+    ctx.translate(cw/2,ch/2);
+    ctx.scale(scale,scale);
+    ctx.drawImage(uploadedImage,-dw/2+panX,-dh/2,dw,dh);
+    ctx.restore();
+    // Letterbox
+    var barH=ch*0.1;
+    ctx.fillStyle='#000';
+    ctx.fillRect(0,0,cw,barH);
+    ctx.fillRect(0,ch-barH,cw,barH);
+    // Warm light leak
+    var leakA=0.06+0.04*Math.sin(t*0.7);
+    var grad=ctx.createLinearGradient(0,0,cw,ch);
+    grad.addColorStop(0,'rgba(255,180,50,'+leakA+')');
+    grad.addColorStop(1,'rgba(255,100,50,0)');
+    ctx.fillStyle=grad;ctx.fillRect(0,0,cw,ch);
+}
+
+// Portal Magico
+function drawPortal(ctx,cw,ch,dw,dh,dx,dy,t){
+    ctx.drawImage(uploadedImage,dx,dy,dw,dh);
+    // Edge warp effect
+    ctx.save();
+    var warpAmt=3*Math.sin(t*2);
+    for(var i=0;i<8;i++){
+        ctx.globalAlpha=0.03;
+        var s=1+0.005*(i+1)*Math.sin(t*3+i);
+        ctx.translate(cw/2,ch/2);ctx.scale(s,s);ctx.translate(-cw/2,-ch/2);
+        ctx.drawImage(uploadedImage,dx+Math.sin(t+i)*warpAmt,dy+Math.cos(t+i)*warpAmt,dw,dh);
+    }
+    ctx.restore();
+    ctx.globalAlpha=1;
+    // Swirling vortex particles
+    var numP=30;
+    for(var i=0;i<numP;i++){
+        var angle=t*0.8+i*(Math.PI*2/numP);
+        var radius=Math.min(cw,ch)*0.42+Math.sin(t*2+i)*15;
+        var px=cw/2+Math.cos(angle)*radius;
+        var py=ch/2+Math.sin(angle)*radius;
+        var size=2+Math.sin(t*3+i*0.5)*1.5;
+        var hue=(t*40+i*12)%360;
+        ctx.beginPath();
+        ctx.arc(px,py,size,0,Math.PI*2);
+        ctx.fillStyle='hsla('+hue+',80%,65%,0.7)';
+        ctx.shadowColor='hsla('+hue+',80%,65%,0.9)';
+        ctx.shadowBlur=10;
+        ctx.fill();
+    }
+    ctx.shadowBlur=0;
+}
+
+// Particles
+function createParticles(count,w,h){
+    var arr=[];
+    for(var i=0;i<count;i++){
+        arr.push({x:Math.random()*w,y:Math.random()*h,size:1.5+Math.random()*3,speed:0.3+Math.random()*0.7,hueOffset:Math.random()*360,drift:Math.random()*2-1});
+    }
+    return arr;
+}
+
+function drawParticles(ctx,parts,t,w,h){
+    parts.forEach(function(p){
+        p.y-=p.speed;
+        p.x+=Math.sin(t+p.drift)*0.4;
+        if(p.y<-10){p.y=h+10;p.x=Math.random()*w;}
+        if(p.x<0)p.x=w;if(p.x>w)p.x=0;
+        var hue=(t*30+p.hueOffset)%360;
+        var colors=['280','45','330'];
+        var baseHue=colors[Math.floor(p.hueOffset/120)%3];
+        ctx.beginPath();
+        ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
+        ctx.fillStyle='hsla('+baseHue+',70%,70%,0.6)';
+        ctx.shadowColor='hsla('+baseHue+',70%,70%,0.8)';
+        ctx.shadowBlur=8;
+        ctx.fill();
+    });
+    ctx.shadowBlur=0;
+}
+
+// Audio
+function startAudio(){
+    try{
+        audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+        var osc1=audioCtx.createOscillator();
+        var osc2=audioCtx.createOscillator();
+        var gain=audioCtx.createGain();
+        var lfo=audioCtx.createOscillator();
+        var lfoGain=audioCtx.createGain();
+        osc1.type='sine';osc1.frequency.value=220;
+        osc2.type='sine';osc2.frequency.value=330;
+        gain.gain.value=0.04;
+        lfo.type='sine';lfo.frequency.value=0.3;
+        lfoGain.gain.value=10;
+        lfo.connect(lfoGain);
+        lfoGain.connect(osc1.frequency);
+        osc1.connect(gain);osc2.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc1.start();osc2.start();lfo.start();
+        audioNodes=[osc1,osc2,lfo];
+    }catch(e){}
+}
+
+function stopAudio(){
+    audioNodes.forEach(function(n){try{n.stop();}catch(e){}});
+    audioNodes=[];
+    if(audioCtx){try{audioCtx.close();}catch(e){}}
+    audioCtx=null;
+}
+
 })();
 </script>
 </body>
