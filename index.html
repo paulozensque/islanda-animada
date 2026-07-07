@@ -390,165 +390,95 @@ footer {
     audioCtx.close(); audioCtx = null; audioNodes = null;
   }
 
-  // ===== DAR VIDA (Record Animation) =====
+  // ===== DAR VIDA (fal.ai via Cloudflare Proxy) =====
+  const PROXY_URL = 'https://islanda-proxy.zensque-paulo.workers.dev';
+
   btnDarVida.addEventListener('click', () => {
     if(!uploadedImage || isRecording) return;
-    recordAnimation();
+    darVida();
   });
 
-  function recordAnimation() {
+  async function darVida() {
     isRecording = true;
     btnDarVida.disabled = true;
     progressContainer.classList.remove('hidden');
-    progressFill.style.width = '0%';
-    previewImg.classList.add('hidden');
+    progressFill.style.width = '5%';
     previewVideo.classList.add('hidden');
-    effectCanvas.classList.add('hidden');
-    stopEffect();
-    startAudio();
 
-    const W = 640, H = 480;
-    const canvas = document.createElement('canvas');
-    canvas.width = W; canvas.height = H;
-    const ctx = canvas.getContext('2d');
+    try {
+      // Resize image to max 512px and convert to data URI
+      const dataUri = imageToDataURI(uploadedImage, 512);
+      progressFill.style.width = '15%';
 
-    // Particles
-    const particles = [];
-    for(let i=0; i<25; i++) {
-      particles.push({
-        x: Math.random()*W, y: H + Math.random()*50,
-        speed: 0.5 + Math.random()*1.5,
-        size: 2 + Math.random()*4,
-        color: ['#D4A945','#8B5CF6','#EC4899'][Math.floor(Math.random()*3)],
-        alpha: 0.3 + Math.random()*0.6,
-        wobble: Math.random()*Math.PI*2
+      // Send to fal.ai via proxy
+      const resp = await fetch(PROXY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image_url: dataUri })
       });
-    }
 
-    const duration = 5000;
-    const fps = 30;
-    const stream = canvas.captureStream(fps);
-    const recorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp9' });
-    const chunks = [];
-    recorder.ondataavailable = (e) => { if(e.data.size>0) chunks.push(e.data); };
-    recorder.onstop = () => {
-      isRecording = false;
-      stopAudio();
-      const blob = new Blob(chunks, { type: 'video/webm' });
-      videoBlobURL = URL.createObjectURL(blob);
-      previewVideo.src = videoBlobURL;
+      progressFill.style.width = '50%';
+
+      if (!resp.ok) {
+        const errData = await resp.json().catch(() => ({}));
+        const errMsg = errData.detail || errData.message || errData.error || ('Erro ' + resp.status);
+        throw new Error(errMsg);
+      }
+
+      const result = await resp.json();
+      progressFill.style.width = '90%';
+
+      // Get video URL from response
+      const videoUrl = (result.video && result.video.url) || result.video_url || null;
+      if (!videoUrl) throw new Error('IA nao retornou video. Tente outra imagem.');
+
+      progressFill.style.width = '100%';
+
+      // Show video
+      previewImg.classList.add('hidden');
+      previewVideo.src = videoUrl;
       previewVideo.classList.remove('hidden');
       previewVideo.play();
-      progressContainer.classList.add('hidden');
-      btnDarVida.disabled = false;
+
+      // Save thumbnail to gallery
+      saveThumbnailToGallery(videoUrl);
+
       animationCount++;
       localStorage.setItem('isla_count', animationCount);
       counterEl.textContent = `\u2728 Anima\u00E7\u00F5es: ${animationCount}`;
-      saveToGallery(canvas);
-      toast('\u2728 Anima\u00E7\u00E3o criada!');
-    };
+      toast('\u2728 Sua obra ganhou vida!');
 
-    recorder.start();
-    const startTime = performance.now();
-
-    function renderFrame() {
-      const elapsed = performance.now() - startTime;
-      const t = Math.min(elapsed / duration, 1);
-      progressFill.style.width = (t*100)+'%';
-
-      ctx.clearRect(0, 0, W, H);
-      ctx.save();
-
-      // Ken Burns
-      const zoom = 1.0 + t * 0.08;
-      const panX = t * 10 - 5;
-      const panY = t * 5 - 2.5;
-      // Breathing
-      const breath = 1 + Math.sin(elapsed*0.003)*0.005;
-      const totalScale = zoom * breath;
-
-      ctx.translate(W/2 + panX, H/2 + panY);
-      ctx.scale(totalScale, totalScale);
-      ctx.translate(-W/2, -H/2);
-
-      // Draw image
-      const imgAspect = uploadedImage.width / uploadedImage.height;
-      const canAspect = W / H;
-      let dw, dh, dx, dy;
-      if(imgAspect > canAspect) { dh = H; dw = H*imgAspect; } else { dw = W; dh = W/imgAspect; }
-      dx = (W - dw)/2; dy = (H - dh)/2;
-      ctx.drawImage(uploadedImage, dx, dy, dw, dh);
-
-      // Warm overlay
-      const warmAlpha = 0.04 + Math.sin(elapsed*0.001)*0.02;
-      ctx.fillStyle = `rgba(255,180,80,${warmAlpha})`;
-      ctx.fillRect(0, 0, W, H);
-
-      ctx.restore();
-
-      // Atmospheric haze
-      const hazeX = Math.sin(elapsed*0.0005)*30;
-      ctx.fillStyle = `rgba(200,180,255,0.02)`;
-      ctx.fillRect(hazeX, 0, W, H);
-
-      // Vignette
-      const vigAlpha = 0.5 + Math.sin(elapsed*0.002)*0.1;
-      const vigGrad = ctx.createRadialGradient(W/2,H/2,W*0.3, W/2,H/2,W*0.75);
-      vigGrad.addColorStop(0, 'transparent');
-      vigGrad.addColorStop(1, `rgba(0,0,0,${vigAlpha})`);
-      ctx.fillStyle = vigGrad;
-      ctx.fillRect(0, 0, W, H);
-
-      // Particles
-      for(const p of particles) {
-        p.y -= p.speed;
-        p.x += Math.sin(elapsed*0.002 + p.wobble)*0.5;
-        if(p.y < -10) { p.y = H+10; p.x = Math.random()*W; }
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
-        ctx.fillStyle = p.color;
-        ctx.globalAlpha = p.alpha * (0.5 + Math.sin(elapsed*0.005+p.wobble)*0.5);
-        ctx.fill();
-        // Trail
-        ctx.beginPath();
-        ctx.arc(p.x, p.y+p.size*2, p.size*0.5, 0, Math.PI*2);
-        ctx.globalAlpha = p.alpha*0.3;
-        ctx.fill();
-        ctx.globalAlpha = 1;
-      }
-
-      // Sparkle bursts
-      const sparklePhase = (elapsed % 1000) / 1000;
-      if(sparklePhase < 0.15) {
-        const sx = (Math.sin(elapsed*0.0031)*0.3+0.5)*W;
-        const sy = (Math.cos(elapsed*0.0023)*0.3+0.5)*H;
-        const sAlpha = 1 - sparklePhase/0.15;
-        ctx.save();
-        ctx.translate(sx, sy);
-        for(let i=0;i<4;i++) {
-          ctx.rotate(Math.PI/4);
-          ctx.fillStyle = `rgba(255,255,220,${sAlpha})`;
-          ctx.fillRect(-1, -8*(1-sparklePhase), 2, 16*(1-sparklePhase));
-        }
-        ctx.restore();
-      }
-
-      if(t < 1) {
-        requestAnimationFrame(renderFrame);
-      } else {
-        recorder.stop();
-      }
+    } catch(err) {
+      toast('Erro: ' + err.message);
     }
-    requestAnimationFrame(renderFrame);
+
+    isRecording = false;
+    btnDarVida.disabled = false;
+    setTimeout(() => { progressContainer.classList.add('hidden'); }, 1000);
   }
 
-  function saveToGallery(canvas) {
+  function imageToDataURI(img, maxDim) {
+    const c = document.createElement('canvas');
+    const scale = Math.min(maxDim / img.width, maxDim / img.height, 1);
+    c.width = Math.round(img.width * scale);
+    c.height = Math.round(img.height * scale);
+    const ctx = c.getContext('2d');
+    ctx.drawImage(img, 0, 0, c.width, c.height);
+    return c.toDataURL('image/jpeg', 0.85);
+  }
+
+  function saveThumbnailToGallery(videoUrl) {
+    // Use the uploaded image as thumbnail
     const thumb = document.createElement('canvas');
     thumb.width = 160; thumb.height = 120;
     const tctx = thumb.getContext('2d');
-    tctx.drawImage(canvas, 0, 0, 160, 120);
+    const imgAspect = uploadedImage.width / uploadedImage.height;
+    let dw, dh;
+    if (imgAspect > 160/120) { dh = 120; dw = 120 * imgAspect; }
+    else { dw = 160; dh = 160 / imgAspect; }
+    tctx.drawImage(uploadedImage, (160-dw)/2, (120-dh)/2, dw, dh);
     const dataURL = thumb.toDataURL('image/jpeg', 0.7);
-    gallery.push({ thumb: dataURL, date: Date.now() });
+    gallery.push({ thumb: dataURL, videoUrl: videoUrl, date: Date.now() });
     try { localStorage.setItem('isla_gallery', JSON.stringify(gallery)); } catch(e){}
     renderGallery();
   }
