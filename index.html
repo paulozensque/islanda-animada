@@ -150,13 +150,8 @@ body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--
 <script>
 (function(){
 'use strict';
-// fal.ai API - Stable Video Diffusion Turbo
-const FAL_KEY='590b2c32-395d-47c1-a557-563e16175dae:b1069758d433feefcebe093c4b38adb9';
-const FAL_MODEL='fal-ai/fast-svd-lcm';
-// Tenta endpoint direto primeiro, depois proxy se CORS bloquear
-const FAL_DIRECT_URL='https://fal.run/'+FAL_MODEL;
-// Se voce deployar o worker.js no Cloudflare, coloque a URL aqui:
-const FAL_PROXY_URL='';
+// fal.ai API via Cloudflare Worker proxy (resolve CORS)
+const FAL_PROXY_URL='https://islanda-proxy.zensque-paulo.workers.dev';
 
 const uploadZone=document.getElementById('uploadZone');
 const imagePreview=document.getElementById('imagePreview');
@@ -287,34 +282,24 @@ async function animateWithFal(){
     progressBar.style.width='20%';
     progressText.textContent='Enviando para a IA... (pode levar 30-60s)';
 
-    var requestBody=JSON.stringify({image_url:dataUri});
-    var url=FAL_PROXY_URL||FAL_DIRECT_URL;
-    var headers={'Content-Type':'application/json'};
-
-    // Se usar endpoint direto, adiciona auth header
-    if(!FAL_PROXY_URL){
-        headers['Authorization']='Key '+FAL_KEY;
-    }
-
     var resp;
     try{
-        resp=await fetch(url,{
+        resp=await fetch(FAL_PROXY_URL,{
             method:'POST',
-            headers:headers,
-            body:requestBody
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({image_url:dataUri})
         });
     }catch(networkErr){
-        // CORS bloqueou - precisa do proxy
-        throw new Error('O navegador bloqueou a conexao (CORS). Para resolver: deploy o arquivo worker.js no Cloudflare Workers (gratis) e coloque a URL no codigo. Enquanto isso, use os Efeitos! ' + networkErr.message);
+        throw new Error('Nao foi possivel conectar ao servidor. Verifique sua conexao.');
     }
 
     if(resp.status===401||resp.status===403){
-        throw new Error('Chave API invalida ou sem creditos. Verifique sua conta em fal.ai/dashboard');
+        throw new Error('Chave API invalida ou sem creditos.');
     }
 
     if(!resp.ok){
         var errText='';
-        try{var errJson=await resp.json();errText=errJson.detail||errJson.message||JSON.stringify(errJson);}catch(e){errText=await resp.text().catch(function(){return '';});}
+        try{var errJson=await resp.json();errText=errJson.detail||errJson.message||errJson.error||JSON.stringify(errJson);}catch(e){errText=await resp.text().catch(function(){return '';});}
         throw new Error('Erro ('+resp.status+'): '+errText.substring(0,150));
     }
 
@@ -323,7 +308,7 @@ async function animateWithFal(){
 
     var result=await resp.json();
     var videoUrl=(result.video&&result.video.url)||result.video_url||null;
-    if(!videoUrl) throw new Error('A IA nao retornou video. Resposta: '+JSON.stringify(result).substring(0,100));
+    if(!videoUrl) throw new Error('A IA nao retornou video. Tente com outra imagem.');
 
     progressBar.style.width='100%';
     progressText.textContent='Concluido! 🎉';
