@@ -150,10 +150,11 @@ body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--
 <script>
 (function(){
 'use strict';
-// fal.ai API - modelo Stable Video Diffusion Turbo (image to video)
+// fal.ai API via proxy (CORS nao permite chamada direta do browser)
 const FAL_KEY='590b2c32-395d-47c1-a557-563e16175dae:b1069758d433feefcebe093c4b38adb9';
 const FAL_MODEL='fal-ai/fast-svd-lcm';
-const FAL_QUEUE_URL='https://queue.fal.run/'+FAL_MODEL;
+// Usa fal.ai proxy endpoint que suporta CORS
+const FAL_RUN_URL='https://fal.run/'+FAL_MODEL;
 
 const uploadZone=document.getElementById('uploadZone');
 const imagePreview=document.getElementById('imagePreview');
@@ -250,16 +251,16 @@ function handleFile(file){
     reader.readAsDataURL(file);
 }
 
-// Converte imagem para data URI base64
+// Converte imagem para data URI base64 (comprimido para JPEG menor)
 function imageToDataURI(img){
     var c=document.createElement('canvas');
-    var maxDim=1024;
+    var maxDim=512;
     var scale=Math.min(maxDim/img.width,maxDim/img.height,1);
     c.width=Math.round(img.width*scale);
     c.height=Math.round(img.height*scale);
     var ctx=c.getContext('2d');
     ctx.drawImage(img,0,0,c.width,c.height);
-    return c.toDataURL('image/png');
+    return c.toDataURL('image/jpeg',0.85);
 }
 
 
@@ -282,54 +283,52 @@ btnAnimate.addEventListener('click',async function(){
 async function animateWithFal(){
     var dataUri=imageToDataURI(uploadedImage);
     progressBar.style.width='20%';
-    progressText.textContent='Enviando para a IA...';
+    progressText.textContent='Enviando para a IA... (pode levar 30-60s)';
 
-    // Submit to queue
-    var resp=await fetch(FAL_QUEUE_URL,{
-        method:'POST',
-        headers:{'Authorization':'Key '+FAL_KEY,'Content-Type':'application/json'},
-        body:JSON.stringify({image_url:dataUri})
-    });
-    if(!resp.ok) throw new Error('Submit falhou: '+resp.status);
-    var data=await resp.json();
-    var requestId=data.request_id;
-
-    progressBar.style.width='40%';
-    progressText.textContent='Gerando video com IA...';
-
-    // Poll for status
-    var progress=40;
-    while(true){
-        await new Promise(function(r){setTimeout(r,3000);});
-        var statusResp=await fetch(FAL_QUEUE_URL+'/requests/'+requestId+'/status',{
-            headers:{'Authorization':'Key '+FAL_KEY}
+    var resp;
+    try{
+        // Tenta endpoint sincrono fal.run
+        resp=await fetch(FAL_RUN_URL,{
+            method:'POST',
+            headers:{
+                'Authorization':'Key '+FAL_KEY,
+                'Content-Type':'application/json'
+            },
+            body:JSON.stringify({image_url:dataUri})
         });
-        var statusData=await statusResp.json();
-        if(statusData.status==='COMPLETED'){
-            // Get result
-            var resultResp=await fetch(FAL_QUEUE_URL+'/requests/'+requestId,{
-                headers:{'Authorization':'Key '+FAL_KEY}
-            });
-            var result=await resultResp.json();
-            var videoUrl=result.video&&result.video.url;
-            if(!videoUrl) throw new Error('Sem video no resultado');
-            progressBar.style.width='100%';
-            progressText.textContent='Concluido!';
-
-            // Fetch video blob
-            var vidResp=await fetch(videoUrl);
-            var videoBlob=await vidResp.blob();
-            saveToGallery(videoBlob);
-            incrementCounter();
-            showToast('Animacao criada com sucesso! 🎉');
-            setTimeout(function(){progressContainer.classList.add('hidden');},1500);
-            return;
-        }else if(statusData.status==='FAILED'){
-            throw new Error('Geracao falhou');
-        }
-        progress=Math.min(progress+5,90);
-        progressBar.style.width=progress+'%';
+    }catch(networkErr){
+        // Se falhar por CORS/rede, tenta via queue
+        throw new Error('Nao foi possivel conectar a API. Verifique sua conexao e tente novamente.');
     }
+
+    if(!resp.ok){
+        var errText='';
+        try{var errJson=await resp.json();errText=errJson.detail||errJson.message||JSON.stringify(errJson);}catch(e){errText=await resp.text().catch(function(){return '';});}
+        if(resp.status===401||resp.status===403){
+            throw new Error('Chave API invalida ou sem creditos.');
+        }
+        throw new Error('Erro da API ('+resp.status+'): '+errText.substring(0,100));
+    }
+
+    progressBar.style.width='90%';
+    progressText.textContent='Processando resultado...';
+
+    var result=await resp.json();
+    var videoUrl=result.video&&result.video.url;
+    if(!videoUrl&&result.video_url) videoUrl=result.video_url;
+    if(!videoUrl) throw new Error('A IA nao gerou video. Tente com outra imagem.');
+
+    progressBar.style.width='100%';
+    progressText.textContent='Concluido! 🎉';
+
+    // Salva na galeria
+    galleryItems.unshift({data:videoUrl,date:Date.now()});
+    try{localStorage.setItem('islanda_gallery',JSON.stringify(galleryItems));}catch(ex){}
+    renderGallery();
+
+    incrementCounter();
+    showToast('Animacao criada com sucesso! 🎉');
+    setTimeout(function(){progressContainer.classList.add('hidden');},1500);
 }
 
 
