@@ -1,33 +1,31 @@
-// Cloudflare Worker - Proxy para fal.ai
-// Deploy em: https://dash.cloudflare.com/ -> Workers & Pages -> Create
-// Cole este codigo e publique. O URL gerado sera algo como:
-// https://islanda-proxy.SEU-USUARIO.workers.dev
-
-const FAL_KEY = '590b2c32-395d-47c1-a557-563e16175dae:b1069758d433feefcebe093c4b38adb9';
+// Cloudflare Worker - Proxy para fal.ai (Islanda Animada)
+// ATUALIZE SEU WORKER COM ESTE CODIGO!
+// Acesse: https://dash.cloudflare.com -> Workers -> islanda-proxy -> Edit Code
+// Cole este codigo e clique "Save and Deploy"
 
 export default {
   async fetch(request) {
-    // CORS headers
     const corsHeaders = {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
     };
 
-    // Handle preflight
     if (request.method === 'OPTIONS') {
       return new Response(null, { headers: corsHeaders });
     }
 
     if (request.method !== 'POST') {
-      return new Response('Method not allowed', { status: 405, headers: corsHeaders });
+      return new Response('Islanda Animada Proxy - OK', { status: 200, headers: corsHeaders });
     }
+
+    const FAL_KEY = '590b2c32-395d-47c1-a557-563e16175dae:b1069758d433feefcebe093c4b38adb9';
 
     try {
       const body = await request.json();
 
-      // Call fal.ai
-      const falResp = await fetch('https://fal.run/fal-ai/fast-svd-lcm', {
+      // Usa o modelo SVD (Stable Video Diffusion) - boa qualidade
+      const resp = await fetch('https://fal.run/fal-ai/fast-svd-lcm', {
         method: 'POST',
         headers: {
           'Authorization': 'Key ' + FAL_KEY,
@@ -36,11 +34,14 @@ export default {
         body: JSON.stringify(body),
       });
 
-      const data = await falResp.json();
+      const responseText = await resp.text();
 
-      return new Response(JSON.stringify(data), {
-        status: falResp.status,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      return new Response(responseText, {
+        status: resp.status,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+        },
       });
     } catch (err) {
       return new Response(JSON.stringify({ error: err.message }), {

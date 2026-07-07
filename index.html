@@ -659,6 +659,15 @@ footer {
       const div = document.createElement('div');
       div.className = 'gallery-item';
       div.innerHTML = `<img src="${item.thumb}" alt="Animation ${idx+1}"><button class="delete-btn" data-idx="${idx}">\u2716</button>`;
+      // Click to play video
+      div.addEventListener('click', (e) => {
+        if(e.target.classList.contains('delete-btn')) return;
+        if(item.videoUrl) {
+          openVideoModal(item.videoUrl);
+        } else {
+          toast('Video nao disponivel nesta sessao');
+        }
+      });
       galleryGrid.appendChild(div);
     });
     galleryGrid.querySelectorAll('.delete-btn').forEach(btn => {
@@ -672,6 +681,27 @@ footer {
       });
     });
   }
+
+  // Video modal for gallery playback
+  function openVideoModal(url) {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:15px;';
+    const video = document.createElement('video');
+    video.src = url;
+    video.controls = true;
+    video.autoplay = true;
+    video.loop = true;
+    video.style.cssText = 'max-width:90vw;max-height:75vh;border-radius:12px;box-shadow:0 0 40px rgba(139,92,246,0.4);';
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = '\u2715 Fechar';
+    closeBtn.style.cssText = 'padding:10px 24px;border-radius:50px;background:rgba(255,255,255,0.15);color:white;border:1px solid rgba(255,255,255,0.3);cursor:pointer;font-size:0.9rem;';
+    closeBtn.addEventListener('click', () => { video.pause(); overlay.remove(); });
+    overlay.addEventListener('click', (e) => { if(e.target === overlay) { video.pause(); overlay.remove(); } });
+    overlay.appendChild(video);
+    overlay.appendChild(closeBtn);
+    document.body.appendChild(overlay);
+  }
+
   renderGallery();
 
 })();
