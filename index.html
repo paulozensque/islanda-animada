@@ -239,7 +239,7 @@ footer {
           <p>Arraste sua obra ou clique aqui</p>
         </div>
         <img id="preview-img" class="hidden" alt="Preview">
-        <video id="preview-video" class="hidden" loop muted playsinline></video>
+        <video id="preview-video" class="hidden" loop playsinline crossorigin="anonymous" controls></video>
         <canvas id="effect-canvas" class="hidden" style="position:absolute;top:0;left:0;width:100%;height:100%;"></canvas>
       </div>
       <div class="frame-legs"></div>
@@ -394,16 +394,20 @@ footer {
   const PROXY_URL = 'https://islanda-proxy.zensque-paulo.workers.dev';
 
   btnDarVida.addEventListener('click', () => {
-    if(!uploadedImage || isRecording) return;
+    if(!uploadedImage) { toast('Envie uma imagem primeiro!'); return; }
+    if(isRecording) { toast('Aguarde, ja esta processando...'); return; }
     darVida();
   });
 
   async function darVida() {
     isRecording = true;
     btnDarVida.disabled = true;
+    btnDarVida.textContent = '⏳ Processando...';
     progressContainer.classList.remove('hidden');
     progressFill.style.width = '5%';
     previewVideo.classList.add('hidden');
+    stopEffect();
+    toast('🌟 Enviando imagem para a IA...');
 
     try {
       // Resize image to max 512px and convert to data URI
@@ -411,6 +415,7 @@ footer {
       progressFill.style.width = '15%';
 
       // Send to fal.ai via proxy
+      toast('⏳ Aguarde ~30-60 segundos...');
       const resp = await fetch(PROXY_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -420,8 +425,13 @@ footer {
       progressFill.style.width = '50%';
 
       if (!resp.ok) {
-        const errData = await resp.json().catch(() => ({}));
-        const errMsg = errData.detail || errData.message || errData.error || ('Erro ' + resp.status);
+        let errMsg = 'Erro ' + resp.status;
+        try {
+          const errData = await resp.json();
+          errMsg = errData.detail || errData.message || errData.error || JSON.stringify(errData).substring(0,200);
+        } catch(e) {
+          errMsg = await resp.text().catch(() => errMsg);
+        }
         throw new Error(errMsg);
       }
 
@@ -430,14 +440,18 @@ footer {
 
       // Get video URL from response
       const videoUrl = (result.video && result.video.url) || result.video_url || null;
-      if (!videoUrl) throw new Error('IA nao retornou video. Tente outra imagem.');
+      if (!videoUrl) {
+        throw new Error('Resposta da IA: ' + JSON.stringify(result).substring(0, 200));
+      }
 
       progressFill.style.width = '100%';
 
       // Show video
       previewImg.classList.add('hidden');
+      effectCanvas.classList.add('hidden');
       previewVideo.src = videoUrl;
       previewVideo.classList.remove('hidden');
+      previewVideo.muted = false;
       previewVideo.play();
 
       // Save thumbnail to gallery
@@ -446,15 +460,17 @@ footer {
       animationCount++;
       localStorage.setItem('isla_count', animationCount);
       counterEl.textContent = `\u2728 Anima\u00E7\u00F5es: ${animationCount}`;
-      toast('\u2728 Sua obra ganhou vida!');
+      toast('✨ Sua obra ganhou vida!');
 
     } catch(err) {
-      toast('Erro: ' + err.message);
+      toast('❌ ' + err.message);
+      console.error('Dar Vida error:', err);
     }
 
     isRecording = false;
     btnDarVida.disabled = false;
-    setTimeout(() => { progressContainer.classList.add('hidden'); }, 1000);
+    btnDarVida.textContent = '🌟 Dar Vida';
+    setTimeout(() => { progressContainer.classList.add('hidden'); }, 1500);
   }
 
   function imageToDataURI(img, maxDim) {
