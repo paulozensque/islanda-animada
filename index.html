@@ -438,11 +438,25 @@ footer {
       const result = await resp.json();
       progressFill.style.width = '90%';
 
-      // Get video URL from response
-      const videoUrl = (result.video && result.video.url) || result.video_url || null;
+      // DEBUG: mostra resposta completa para diagnostico
+      console.log('fal.ai response:', JSON.stringify(result));
+      const resultKeys = Object.keys(result).join(', ');
+      toast('📦 Resposta recebida! Campos: ' + resultKeys);
+
+      // Get video URL from response - tenta todos os formatos possiveis
+      let videoUrl = null;
+      if (result.video && result.video.url) videoUrl = result.video.url;
+      else if (result.video_url) videoUrl = result.video_url;
+      else if (result.output && result.output.video) videoUrl = result.output.video;
+      else if (result.data && result.data.video) videoUrl = result.data.video;
+      else if (typeof result.video === 'string') videoUrl = result.video;
+
       if (!videoUrl) {
-        throw new Error('Resposta da IA: ' + JSON.stringify(result).substring(0, 200));
+        // Mostra a resposta inteira para debug
+        throw new Error('Resposta: ' + JSON.stringify(result).substring(0, 300));
       }
+
+      toast('🎬 Video URL: ' + videoUrl.substring(0, 80) + '...');
 
       progressFill.style.width = '100%';
 
